@@ -1,0 +1,30 @@
+This code implements a simulator for the games in the IRC poker database.
+
+To run the code:  java simulator.sim.Simulator -d <directory to IRC data> [-i]
+
+The -i flag is optional.  If present, the code is run in an interactive fashion where
+the actions and betting of a single game is printed to the console, then the simulation
+prompts the user as to whether to run the next game.  Intended for testing.
+
+Collected statistics are saved in the local data/ directory named for the state
+they represent.  For example, plm.csv represents all collected data in the state of
+<PREFLOP, LOW, MEDIUM>, where PREFLOP is the game phase, LOW is the pot percentage,
+and MEDIUM is the stack percentage.
+
+Each line of the data file is in the following format:
+Phase, Pot%, Stack%, Check%, Bet%, Call%, Raise%, AvgBetAmt, AvgBetStdDev, AllIn%, Fold%, AvgFoldAmt
+
+Where:
+  Phase = PREFLOP, FLOP, TURN, RIVER -> the phase of the game
+  Pot% = LOW, MEDIUM, HIGH -> the size of the pot relative to the chips on the table
+  Stack% = LOW, MEDIUM, HIGH -> the size of the player's stack relative to the chips on the table
+
+  Check% = percentage of time player checked when the game is in the given state
+  Bet% = percentage of time player bet when the game is in the given state
+  Call% = percentage of time player called when the game is in the given state
+  Raise% = percentage of time player raised when the game is in the given state
+  AvgBetAmt = average amount of chips the player bet when betting/raising/calling
+  AvgBetStdDev = standard deviation of AvgBetAmt
+  AllIn% = percentage of time player went all in -- due to dataset limitations, only calculated at RIVER phase
+  Fold% = percentage of time player folded when the game is in the given state
+  AvgFoldAmt = average amount of chips player would have had to play had they not decided to fold
