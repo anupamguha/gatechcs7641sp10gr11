@@ -7,8 +7,11 @@ public class Stats {
   private double numSituations;
   
   private double bets;
+  private double raises;
+  private double calls;
   private double folds;
   private double allIn;
+  private double check;
   
   private ArrayList<Integer> betAmount;
   private ArrayList<Integer> foldAmount;
@@ -36,6 +39,15 @@ public class Stats {
   public void addAllIn() {
     ++allIn;
   }
+  public void addRaise() {
+    ++raises;
+  }
+  public void addCall() {
+    ++calls;
+  }
+  public void addCheck() {
+    ++check;
+  }
   
   public void addBetAmt(int amt) {
     betAmount.add(amt);
@@ -47,29 +59,48 @@ public class Stats {
   public ArrayList<Double> calculate() {
     ArrayList<Double> results = new ArrayList<Double>();
     
+    // check percentage
+    double checkPercentage = check / numSituations;
+    results.add(checkPercentage);
+    
     // bet percentage
     double betPercentage = bets / numSituations;
     results.add(betPercentage);
     
+    // call percentage
+    double callPercentage = calls / numSituations;
+    results.add(callPercentage);
+    
+    // raise percentage
+    double raisePercentage = raises / numSituations;
+    results.add(raisePercentage);
+    
     // calculate average raise amount
-    double sum = 0;
-    
-    for (Integer i : betAmount) {
-      sum += i;
+    if ((bets + calls + raises) == 0) {
+      results.add(0.0);
+      results.add(0.0);
     }
+    else {
+      double sum = 0;
     
-    double betAvg = sum / bets;
-    results.add(betAvg);
+      for (Integer i : betAmount) {
+        sum += i;
+      }
     
-    // calculate raise std dev
-    double squares = 0;
+      double betAvg = sum / (bets + calls + raises);
+      results.add(betAvg);
     
-    for (Integer i : betAmount) {
-      squares += Math.pow((i - betAvg), 2);
+    
+      // calculate raise std dev
+      double squares = 0;
+    
+      for (Integer i : betAmount) {
+        squares += Math.pow((i - betAvg), 2);
+      }
+    
+      double raiseStdDev = Math.sqrt(squares / (bets + calls + raises));
+      results.add(raiseStdDev);
     }
-    
-    double raiseStdDev = Math.sqrt(squares / bets);
-    results.add(raiseStdDev);
     
     // all in percentage
     double aiPercentage = allIn / numSituations;
@@ -80,14 +111,19 @@ public class Stats {
     results.add(foldPercentage);
     
     // average amount causing a fold
-    sum = 0;
-    
-    for (Integer i : foldAmount) {
-      sum += i;
+    if (folds == 0) { // if no folds, will cause / by 0
+      results.add(0.0);
     }
+    else {
+      double sum = 0;
     
-    double foldAvg = sum / folds;
-    results.add(foldAvg);
+      for (Integer i : foldAmount) {
+        sum += i;
+      }
+    
+      double foldAvg = sum / folds;
+      results.add(foldAvg);
+    }
     
     
     return results;
