@@ -28,3 +28,9 @@ Where:
   AllIn% = percentage of time player went all in -- due to dataset limitations, only calculated at RIVER phase
   Fold% = percentage of time player folded when the game is in the given state
   AvgFoldAmt = average amount of chips player would have had to play had they not decided to fold
+
+The files/ directory consists of a small subset of data to be used in testing.  It is something that 
+we can easily calculate statistics on and follow actions of to ensure that everything is 
+being calculated/running correctly.  The actual test set used is available online at the IRC 
+poker database website (http://games.cs.ualberta.ca/poker/IRC/IRCdata/) and is the tourney.200012.tgz
+data file.
