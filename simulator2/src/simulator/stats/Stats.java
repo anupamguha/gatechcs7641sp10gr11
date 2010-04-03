@@ -13,12 +13,12 @@ public class Stats {
   private double allIn;
   private double check;
   
-  private ArrayList<Integer> betAmount;
-  private ArrayList<Integer> foldAmount;
+  private ArrayList<Double> betAmount;
+  private ArrayList<Double> foldAmount;
   
   public Stats() {
-    betAmount = new ArrayList<Integer>();
-    foldAmount = new ArrayList<Integer>();
+    betAmount = new ArrayList<Double>();
+    foldAmount = new ArrayList<Double>();
     
     numSituations = 0;
     
@@ -49,11 +49,11 @@ public class Stats {
     ++check;
   }
   
-  public void addBetAmt(int amt) {
-    betAmount.add(amt);
+  public void addBetAmt(int amt, int tableAmt) {
+    betAmount.add((double)amt / tableAmt);
   }
-  public void addFoldAmt(int amt) {
-    foldAmount.add(amt);
+  public void addFoldAmt(int amt, int tableAmt) {
+    foldAmount.add((double)amt / tableAmt);
   }
   
   public ArrayList<Double> calculate() {
@@ -83,8 +83,8 @@ public class Stats {
     else {
       double sum = 0;
     
-      for (Integer i : betAmount) {
-        sum += i;
+      for (Double d : betAmount) {
+        sum += d;
       }
     
       double betAvg = sum / (bets + calls + raises);
@@ -94,8 +94,8 @@ public class Stats {
       // calculate raise std dev
       double squares = 0;
     
-      for (Integer i : betAmount) {
-        squares += Math.pow((i - betAvg), 2);
+      for (Double d : betAmount) {
+        squares += Math.pow((d - betAvg), 2);
       }
     
       double raiseStdDev = Math.sqrt(squares / (bets + calls + raises));
@@ -117,8 +117,8 @@ public class Stats {
     else {
       double sum = 0;
     
-      for (Integer i : foldAmount) {
-        sum += i;
+      for (Double d : foldAmount) {
+        sum += d;
       }
     
       double foldAvg = sum / folds;
