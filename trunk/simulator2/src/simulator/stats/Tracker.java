@@ -52,6 +52,58 @@ public class Tracker {
   }
   
   public void save(String directory) {
+    BufferedWriter agg = null;
+    
+    try {
+      agg = new BufferedWriter(new FileWriter(directory + "agg.tab"));
+      
+      StringBuilder sb = new StringBuilder();
+      
+      // set up headers
+      sb.append("Player\tPhase\tPot%\tStack%\tCheck%\tBet%\tCall%\tRaise%\tAvgBetAmt\tAvgBetStdDev\tAllIn%\tFold%\tAvgFoldAmt\n");
+      sb.append("d\td\td\td\tc\tc\tc\tc\tc\tc\tc\tc\tc\n");
+      sb.append("i\t\t\t\t\t\t\t\t\t\t\t\t\t\n");
+      
+      agg.write(sb.toString());
+      
+      for (Player p : stats.keySet()) {
+    	  
+        HashMap<State, Stats> sts = stats.get(p);
+        
+        for (State s : sts.keySet()) {
+          sb.delete(0, sb.length());
+          
+          sb.delete(0, sb.length());
+      	  sb.append(p.getName());
+      	  sb.append("\t");
+
+          sb.append(s.getPhase()).append("\t").append(s.getPotPercent());
+          sb.append("\t").append(s.getStackPercent());
+
+          Stats st = sts.get(s);
+
+          ArrayList<Double> results = st.calculate();
+
+          for (Double d : results) {
+            sb.append("\t").append(d);
+          }
+
+          sb.append("\n");
+
+          agg.write(sb.toString());
+        }
+      }
+
+      agg.close();
+    }
+    catch(IOException ioe) {
+      System.err.println("Error writing stats to file"); 
+      System.err.println(ioe.getMessage());
+    }
+    
+  }
+  
+  public void saveSeparate(String directory) {
     BufferedWriter pll = null;
     BufferedWriter plm = null;
     BufferedWriter plh = null;
@@ -93,61 +145,113 @@ public class Tracker {
     BufferedWriter rhh = null;
     
     try {
-      pll = new BufferedWriter(new FileWriter(directory + "pll.csv"));
-      plm = new BufferedWriter(new FileWriter(directory + "plm.csv"));
-      plh = new BufferedWriter(new FileWriter(directory + "plh.csv"));
-      pml = new BufferedWriter(new FileWriter(directory + "pml.csv"));
-      pmm = new BufferedWriter(new FileWriter(directory + "pmm.csv"));
-      pmh = new BufferedWriter(new FileWriter(directory + "pmh.csv"));
-      phl = new BufferedWriter(new FileWriter(directory + "phl.csv"));
-      phm = new BufferedWriter(new FileWriter(directory + "phm.csv"));
-      phh = new BufferedWriter(new FileWriter(directory + "phh.csv"));
+      pll = new BufferedWriter(new FileWriter(directory + "pll.tab"));
+      plm = new BufferedWriter(new FileWriter(directory + "plm.tab"));
+      plh = new BufferedWriter(new FileWriter(directory + "plh.tab"));
+      pml = new BufferedWriter(new FileWriter(directory + "pml.tab"));
+      pmm = new BufferedWriter(new FileWriter(directory + "pmm.tab"));
+      pmh = new BufferedWriter(new FileWriter(directory + "pmh.tab"));
+      phl = new BufferedWriter(new FileWriter(directory + "phl.tab"));
+      phm = new BufferedWriter(new FileWriter(directory + "phm.tab"));
+      phh = new BufferedWriter(new FileWriter(directory + "phh.tab"));
       
-      fll = new BufferedWriter(new FileWriter(directory + "fll.csv"));
-      flm = new BufferedWriter(new FileWriter(directory + "flm.csv"));
-      flh = new BufferedWriter(new FileWriter(directory + "flh.csv"));
-      fml = new BufferedWriter(new FileWriter(directory + "fml.csv"));
-      fmm = new BufferedWriter(new FileWriter(directory + "fmm.csv"));
-      fmh = new BufferedWriter(new FileWriter(directory + "fmh.csv"));
-      fhl = new BufferedWriter(new FileWriter(directory + "fhl.csv"));
-      fhm = new BufferedWriter(new FileWriter(directory + "fhm.csv"));
-      fhh = new BufferedWriter(new FileWriter(directory + "fhh.csv"));
+      fll = new BufferedWriter(new FileWriter(directory + "fll.tab"));
+      flm = new BufferedWriter(new FileWriter(directory + "flm.tab"));
+      flh = new BufferedWriter(new FileWriter(directory + "flh.tab"));
+      fml = new BufferedWriter(new FileWriter(directory + "fml.tab"));
+      fmm = new BufferedWriter(new FileWriter(directory + "fmm.tab"));
+      fmh = new BufferedWriter(new FileWriter(directory + "fmh.tab"));
+      fhl = new BufferedWriter(new FileWriter(directory + "fhl.tab"));
+      fhm = new BufferedWriter(new FileWriter(directory + "fhm.tab"));
+      fhh = new BufferedWriter(new FileWriter(directory + "fhh.tab"));
       
-      tll = new BufferedWriter(new FileWriter(directory + "tll.csv"));
-      tlm = new BufferedWriter(new FileWriter(directory + "tlm.csv"));
-      tlh = new BufferedWriter(new FileWriter(directory + "tlh.csv"));
-      tml = new BufferedWriter(new FileWriter(directory + "tml.csv"));
-      tmm = new BufferedWriter(new FileWriter(directory + "tmm.csv"));
-      tmh = new BufferedWriter(new FileWriter(directory + "tmh.csv"));
-      thl = new BufferedWriter(new FileWriter(directory + "thl.csv"));
-      thm = new BufferedWriter(new FileWriter(directory + "thm.csv"));
-      thh = new BufferedWriter(new FileWriter(directory + "thh.csv"));
+      tll = new BufferedWriter(new FileWriter(directory + "tll.tab"));
+      tlm = new BufferedWriter(new FileWriter(directory + "tlm.tab"));
+      tlh = new BufferedWriter(new FileWriter(directory + "tlh.tab"));
+      tml = new BufferedWriter(new FileWriter(directory + "tml.tab"));
+      tmm = new BufferedWriter(new FileWriter(directory + "tmm.tab"));
+      tmh = new BufferedWriter(new FileWriter(directory + "tmh.tab"));
+      thl = new BufferedWriter(new FileWriter(directory + "thl.tab"));
+      thm = new BufferedWriter(new FileWriter(directory + "thm.tab"));
+      thh = new BufferedWriter(new FileWriter(directory + "thh.tab"));
       
-      rll = new BufferedWriter(new FileWriter(directory + "rll.csv"));
-      rlm = new BufferedWriter(new FileWriter(directory + "rlm.csv"));
-      rlh = new BufferedWriter(new FileWriter(directory + "rlh.csv"));
-      rml = new BufferedWriter(new FileWriter(directory + "rml.csv"));
-      rmm = new BufferedWriter(new FileWriter(directory + "rmm.csv"));
-      rmh = new BufferedWriter(new FileWriter(directory + "rmh.csv"));
-      rhl = new BufferedWriter(new FileWriter(directory + "rhl.csv"));
-      rhm = new BufferedWriter(new FileWriter(directory + "rhm.csv"));
-      rhh = new BufferedWriter(new FileWriter(directory + "rhh.csv"));
+      rll = new BufferedWriter(new FileWriter(directory + "rll.tab"));
+      rlm = new BufferedWriter(new FileWriter(directory + "rlm.tab"));
+      rlh = new BufferedWriter(new FileWriter(directory + "rlh.tab"));
+      rml = new BufferedWriter(new FileWriter(directory + "rml.tab"));
+      rmm = new BufferedWriter(new FileWriter(directory + "rmm.tab"));
+      rmh = new BufferedWriter(new FileWriter(directory + "rmh.tab"));
+      rhl = new BufferedWriter(new FileWriter(directory + "rhl.tab"));
+      rhm = new BufferedWriter(new FileWriter(directory + "rhm.tab"));
+      rhh = new BufferedWriter(new FileWriter(directory + "rhh.tab"));
       
       StringBuilder sb = new StringBuilder();
+      
+      // set up headers
+      sb.append("Player\tPhase\tPot%\tStack%\tCheck%\tBet%\tCall%\tRaise%\tAvgBetAmt\tAvgBetStdDev\tAllIn%\tFold%\tAvgFoldAmt\n");
+      sb.append("d\td\td\td\tc\tc\tc\tc\tc\tc\tc\tc\tc\n");
+      sb.append("i\ti\ti\ti\t\t\t\t\t\t\t\t\t\t\n");
+      
+      pll.write(sb.toString());
+      plm.write(sb.toString());
+      plh.write(sb.toString());
+      pml.write(sb.toString());
+      pmm.write(sb.toString());
+      pmh.write(sb.toString());
+      phl.write(sb.toString());
+      phm.write(sb.toString());
+      phh.write(sb.toString());
+      
+      fll.write(sb.toString());
+      flm.write(sb.toString());
+      flh.write(sb.toString());
+      fml.write(sb.toString());
+      fmm.write(sb.toString());
+      fmh.write(sb.toString());
+      fhl.write(sb.toString());
+      fhm.write(sb.toString());
+      fhh.write(sb.toString());
+      
+      tll.write(sb.toString());
+      tlm.write(sb.toString());
+      tlh.write(sb.toString());
+      tml.write(sb.toString());
+      tmm.write(sb.toString());
+      tmh.write(sb.toString());
+      thl.write(sb.toString());
+      thm.write(sb.toString());
+      thh.write(sb.toString());
+      
+      rll.write(sb.toString());
+      rlm.write(sb.toString());
+      rlh.write(sb.toString());
+      rml.write(sb.toString());
+      rmm.write(sb.toString());
+      rmh.write(sb.toString());
+      rhl.write(sb.toString());
+      rhm.write(sb.toString());
+      rhh.write(sb.toString());
+      
       for (Player p : stats.keySet()) {
+    	  
         HashMap<State, Stats> sts = stats.get(p);
+        
         for (State s : sts.keySet()) {
           sb.delete(0, sb.length());
+          
+          sb.delete(0, sb.length());
+      	  sb.append(p.getName());
+      	  sb.append("\t");
 
-          sb.append(s.getPhase()).append(",").append(s.getPotPercent());
-          sb.append(",").append(s.getStackPercent());
+          sb.append(s.getPhase()).append("\t").append(s.getPotPercent());
+          sb.append("\t").append(s.getStackPercent());
 
           Stats st = sts.get(s);
 
           ArrayList<Double> results = st.calculate();
 
           for (Double d : results) {
-            sb.append(",").append(d);
+            sb.append("\t").append(d);
           }
 
           sb.append("\n");

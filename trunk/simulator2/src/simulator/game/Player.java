@@ -433,6 +433,10 @@ public class Player implements Comparable {
     return -1;
   }
   
+  public String getName() {
+    return this.name;
+  }
+  
   public boolean equals(Object obj) {
     Player p = (Player) obj;
     

@@ -62,7 +62,37 @@ public class Simulation {
       BufferedReader isr = new BufferedReader(new InputStreamReader(System.in));
       String line = br.readLine();
       while (line != null && next == true) {
-       Game g = constructGame(line);
+    	  
+	    // skip bad game ids
+    	  /*
+    	String[] badIds = {"975654352", "975654671"};
+	    String id = line.split(" ")[0];
+	    boolean flag = false;
+	    for (String badId : badIds)
+	    {
+	    	if (id.equals(badId)) flag = true;
+	    }
+	    if (flag)
+	    {
+	    	System.out.println("Skipping game " + id);
+	    	line = br.readLine();
+	    	continue;
+	    }
+	    */
+    	 
+	    Game g = null;
+	    try
+	    {
+	    	g = constructGame(line);
+	    }
+	    catch (Exception e)
+	    {
+	    	String id = line.split(" ")[0];
+	    	System.out.println("Skipping game " + id + " due to exception");
+	    	line = br.readLine();
+	    	continue;
+	    }
+	    
        g.play();
        
        if (interactive) {
@@ -144,6 +174,8 @@ public class Simulation {
     
     try {    
       for (String s : files) {
+    	if (s.startsWith("."))
+    		continue;
         br = new BufferedReader(new FileReader(new File(dir + "pdb/" + s)));
         HashMap<String, String> map = new HashMap<String, String>();
         String key = s.substring(s.indexOf('.') + 1);

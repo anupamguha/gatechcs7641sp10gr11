@@ -283,7 +283,7 @@ public class Game {
 
         if (track) {
           stats.addBet();
-          stats.addBetAmt(bet);
+          stats.addBetAmt(bet, table);
 
           stats.addFold();
           
@@ -312,7 +312,7 @@ public class Game {
         if (track) {
           stats.addCall();
           if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -341,7 +341,7 @@ public class Game {
         if (track) {
           stats.addRaise();
           if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -380,7 +380,7 @@ public class Game {
         if (raiseList.contains(p)) 
           stats.addRaise();
         
-        stats.addBetAmt(bet);
+        stats.addBetAmt(bet, table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -398,7 +398,7 @@ public class Game {
         stats.addSituation();
 
         stats.addFold();
-        stats.addFoldAmt(bet);
+        stats.addFoldAmt(bet,table);
         tracker.addMapping(p, state, stats);
       } 
       
@@ -423,7 +423,7 @@ public class Game {
         
         stats = tracker.getStats(p, state);
         
-        stats.addFoldAmt(bet - p.getChipsPlayed());
+        stats.addFoldAmt(bet - p.getChipsPlayed(), table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -554,7 +554,7 @@ public class Game {
 
         if (track) {
           stats.addBet();
-          stats.addBetAmt(bet);
+          stats.addBetAmt(bet, table);
 
           stats.addFold();
           
@@ -583,7 +583,7 @@ public class Game {
         if (track) {
           stats.addCall();
           if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -612,7 +612,7 @@ public class Game {
         if (track) {
           stats.addRaise();
           if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -650,7 +650,7 @@ public class Game {
         }
         if (raiseList.contains(p)) 
           stats.addRaise();
-        stats.addBetAmt(bet);
+        stats.addBetAmt(bet, table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -668,7 +668,7 @@ public class Game {
         stats.addSituation();
 
         stats.addFold();
-        stats.addFoldAmt(bet);
+        stats.addFoldAmt(bet,table);
         
         tracker.addMapping(p, state, stats);
       } 
@@ -695,7 +695,7 @@ public class Game {
         
         stats = tracker.getStats(p, state);
         
-        stats.addFoldAmt(bet - p.getChipsPlayed());
+        stats.addFoldAmt(bet - p.getChipsPlayed(), table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -824,7 +824,7 @@ public class Game {
 
         if (track) {
           stats.addBet();
-          stats.addBetAmt(bet);
+          stats.addBetAmt(bet, table);
 
           stats.addFold();
           
@@ -853,7 +853,7 @@ public class Game {
         if (track) {
           stats.addCall();
           if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -882,7 +882,7 @@ public class Game {
         if (track) {
           stats.addRaise();
           if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -920,7 +920,7 @@ public class Game {
         }
         if (raiseList.contains(p)) 
           stats.addRaise();
-        stats.addBetAmt(bet);
+        stats.addBetAmt(bet, table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -938,7 +938,7 @@ public class Game {
         stats.addSituation();
 
         stats.addFold();
-        stats.addFoldAmt(bet);
+        stats.addFoldAmt(bet,table);
         
         tracker.addMapping(p, state, stats);
       } 
@@ -965,7 +965,7 @@ public class Game {
         
         stats = tracker.getStats(p, state);
         
-        stats.addFoldAmt(bet - p.getChipsPlayed());
+        stats.addFoldAmt(bet - p.getChipsPlayed(), table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -1096,7 +1096,7 @@ public class Game {
 
         if (track) {
           stats.addBet();
-          stats.addBetAmt(bet);
+          stats.addBetAmt(bet, table);
 
           stats.addFold();
           
@@ -1125,7 +1125,7 @@ public class Game {
         if (track) {
           stats.addCall();
           if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -1154,7 +1154,7 @@ public class Game {
         if (track) {
           stats.addRaise();
           if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
+            stats.addBetAmt(bet, table);
             stats.addFold();
           }
           
@@ -1218,7 +1218,7 @@ public class Game {
         }
         if (raiseList.contains(p)) 
           stats.addRaise();
-        stats.addBetAmt(bet);
+        stats.addBetAmt(bet, table);
         
         tracker.addMapping(p, state, stats);
       }
@@ -1236,7 +1236,7 @@ public class Game {
         stats.addSituation();
 
         stats.addFold();
-        stats.addFoldAmt(bet);
+        stats.addFoldAmt(bet,table);
         
         tracker.addMapping(p, state, stats);
       } 
@@ -1263,7 +1263,7 @@ public class Game {
         
         stats = tracker.getStats(p, state);
         
-        stats.addFoldAmt(bet - p.getChipsPlayed());
+        stats.addFoldAmt(bet - p.getChipsPlayed(), table);
         
         tracker.addMapping(p, state, stats);
       }
