@@ -3,6 +3,7 @@ package simulator.stats;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -12,7 +13,7 @@ public class Tracker {
   
   private static Tracker instance = null;
   
-  public static final int PLAYERS = 4;
+  public static final int PLAYERS = 2;
   private HashMap<Player, HashMap<State, Stats>> stats;
   
   private Tracker() {
@@ -62,7 +63,7 @@ public class Tracker {
       // set up headers
       sb.append("Player\tPhase\tPot%\tStack%\tCheck%\tBet%\tCall%\tRaise%\tAvgBetAmt\tAvgBetStdDev\tAllIn%\tFold%\tAvgFoldAmt\n");
       sb.append("d\td\td\td\tc\tc\tc\tc\tc\tc\tc\tc\tc\n");
-      sb.append("i\t\t\t\t\t\t\t\t\t\t\t\t\t\n");
+      sb.append("\t\t\t\t\t\t\t\t\t\t\t\t\t\n");
       
       agg.write(sb.toString());
       
@@ -85,7 +86,8 @@ public class Tracker {
           ArrayList<Double> results = st.calculate();
 
           for (Double d : results) {
-            sb.append("\t").append(d);
+        	DecimalFormat fourDecs = new DecimalFormat("#0.0000");
+            sb.append("\t").append(fourDecs.format(d));
           }
 
           sb.append("\n");

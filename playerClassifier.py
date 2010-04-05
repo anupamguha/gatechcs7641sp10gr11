@@ -12,39 +12,57 @@ MED = "m"
 HIGH = "h"
 
 # Change back when done testing
+#phases = [PREFLOP]
+#stackLevels = [LOW]
+#potLevels = [LOW]
+phases = [PREFLOP, FLOP, TURN, RIVER]
+stackLevels = [LOW, MED, HIGH]
+potLevels = [LOW, MED, HIGH]
+
+"""
+# Change back when done testing
 phases = [PREFLOP]
 stackLevels = [LOW]
 potLevels = [LOW]
 #phases = [PREFLOP, FLOP, TURN, RIVER]
 #stackLevels = [LOW, MED, HIGH]
 #potLevels = [LOW, MED, HIGH]
-
-classifiersFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/data/classifiers.pik"
-classifiersFile = open(classifiersFilepath, 'r')
-up = pickle.Unpickler(classifiersFile)
-strategyClassifiers = up.load()
-classifiersFile.close()
-
-#playerData = { "pll" : [0.0,0.375,0.75,0.0,452.3333333333333,952.1120187752574,0.0,0.25,1200.0]} # input
-playerData = { "pll" : [0.05555555555555555,0.16666666666666666,0.1111111111111111,0.0,0.002515540114986834,0.0028491289710054985,0.0,0.7777777777777778,0.003467371925791251]}
-playerStrategiesDict = dict() # output
-playerStrategiesList = list() #output
+"""
 
 def makeKey(phase, potLevel, stackLevel):
-	#return phase + "," + stackLevel + "," + potLevel
-	return phase + stackLevel + potLevel
+	return phase + potLevel + stackLevel
 
-for phase in phases:
-	for potLevel in potLevels:
-		for stackLevel in stackLevels:
+class PlayerClassifier:
+
+	def __init__(self, filepath):
+		classifiersFile = open(filepath, 'r')
+		up = pickle.Unpickler(classifiersFile)
+		self.strategyClassifiers = up.load()
+		classifiersFile.close()
 		
-			key = makeKey(phase, potLevel, stackLevel)
-			print "Player strategy for", key,"=",
+	def label(self, name, playerData):
+		playerStrategiesDict = dict()
+		playerStrategiesList = list()
 		
-			classifier = strategyClassifiers[key]
-			playerAttribs = playerData[key]
-			playerExample = orange.Example(classifier.getDomain(), playerAttribs)
-			label = classifier.label(playerExample)
-			playerStrategiesDict[key] = label
-			playerStrategiesList.append(label)
-			print label
+		for phase in phases:
+			for potLevel in potLevels:
+				for stackLevel in stackLevels:
+				
+					key = makeKey(phase, potLevel, stackLevel)
+					#print name,"strategy for", key,"=",
+				
+					classifier = self.strategyClassifiers[key]
+					playerAttribs = playerData[key]
+					
+					if playerAttribs != None and classifier != None:
+						playerExample = orange.Example(classifier.getDomain(), playerAttribs)
+						label = classifier.label(playerExample)
+					else:
+						label = "?"
+						
+					playerStrategiesDict[key] = label
+					playerStrategiesList.append(label)
+					#print label
+
+		return playerStrategiesDict
+					

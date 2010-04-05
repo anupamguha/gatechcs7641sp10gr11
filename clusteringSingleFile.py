@@ -6,10 +6,24 @@ import os, pickle
 from time import clock,time
 
 from DirtyKNNClassifier import *
+from playerClassifier import *
 
-# http://www.ailab.si/orange/doc/modules/orngClustering.htm
+# ---------------------------------------------------------------------------
+#                              SET THESE
 
 colors = ["white", "red", "blue", "yellow", "green", "orange", "purple", "pink", "firebrick", "gold", "greenyellow", "gray", "indigo", "khaki"]
+
+kmin = 2
+kmax = min(5, len(colors))
+
+graphAttribute1 = "Check%"
+graphAttribute2 = "Bet%"
+
+filepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/agg.tab"
+
+# ---------------------------------------------------------------------------
+
+# http://www.ailab.si/orange/doc/modules/orngClustering.htm
 
 def plot_scatter(data, cls, attx, atty, filepath, title=None):
 	"""plot a data scatter plot with the position of centeroids"""
@@ -43,22 +57,10 @@ RIVER = "RIVER"
 LOW = "LOW"
 MED = "MEDIUM"
 HIGH = "HIGH"
-
-# Change back when done testing
-#phases = [PREFLOP]
-#stackLevels = [LOW]
-#potLevels = [LOW]
 phases = [PREFLOP, FLOP, TURN, RIVER]
 stackLevels = [LOW, MED, HIGH]
 potLevels = [LOW, MED, HIGH]
 
-kmin = 2
-kmax = min(5, len(colors))
-
-graphAttribute1 = "Check%"
-graphAttribute2 = "Bet%"
-
-filepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/agg.tab"
 pathTokens = filepath.rsplit("/", 1)
 directory = pathTokens[0] + "/"
 fileTokens = pathTokens[1].rsplit(".", 1)
@@ -68,7 +70,18 @@ ext = "." + fileTokens[1]
 resultingClusterers = dict()
 resultingClassifiers = dict()
 
-totalData = orange.ExampleTable(filepath)
+# get all data
+totalDataPlusNames = orange.ExampleTable(filepath)
+
+# remove player names from the data
+attribsWithoutNames = totalDataPlusNames.domain[1:]
+domainWithoutNames = orange.Domain(attribsWithoutNames)
+totalData = orange.ExampleTable(domainWithoutNames, totalDataPlusNames)
+
+# and set up a domain which doesn't include Phase, Pot%, Stack%, since
+#	we will be filtering on these and they'll all be the same
+attribs = totalData.domain[3:]
+reducedDomain = orange.Domain(attribs)
 
 def makeKey(phase, potLevel, stackLevel):
 	return phase.lower()[0] + potLevel.lower()[0] + stackLevel.lower()[0]
@@ -81,20 +94,24 @@ for phase in phases:
 			print("------------------------------------------------------------")
 			print("Clustering: " + key)
 			
+			# get only data with the values we care about
 			try:
-				data = totalData.filter({"Phase" : phase, "Pot%" : potLevel, "Stack%" : stackLevel})
+				filteredData = totalData.filter({"Phase" : phase, "Pot%" : potLevel, "Stack%" : stackLevel})
 			except:
 				print ("Enum Value not included for this cross-section")
+				resultingClusterers[key] = None
+				resultingClassifiers[key] = None
 				continue
 			
-			print "Number of player samples for cross section:", len(data)
-			if (len(data) <= kmax):
+			print "Number of player samples for cross section:", len(filteredData)
+			if (len(filteredData) <= kmax):
 				print ("Not enough data for this cross-section")
+				resultingClusterers[key] = None
+				resultingClassifiers[key] = None
 				continue
-				
-			attribs = data.domain[3:]
-			reducedDomain = orange.Domain(attribs)
-			data = orange.ExampleTable(reducedDomain, data)
+			
+			# now throw away those values, since they're all the same and will slow down results
+			data = orange.ExampleTable(reducedDomain, filteredData)
 
 			bestClusterer = None
 			bestScore = -2 # worst possible silhouette score is -1, best is 1
@@ -135,63 +152,86 @@ for phase in phases:
 			stringValues = list()
 			for intValue in intValues:
 				stringValues.append(str(intValue))
-				
-			# Create a new domain, same as our original data plus a cluster number
-			cluster = orange.EnumVariable("cluster", values = stringValues)
-			labelledDomain = orange.Domain(data.domain.attributes+[cluster])
-
+			
 			#print data.domain
 			#print labelledDomain
-
-			"""
-			# Copy all of our examples and append the cluster number
-			labelledExamples = list()
-			i = 0
-			for example in data:
-				attribs = list()
-				for attrib in example:
-					attribs.append(attrib)
-				attribs.append(bestClusterer.clusters[i]) # use this line if the original data does not have labels
-				#attribs[len(attribs)-1] = bestClusterer.clusters[i] # use this line if the original data already has labels which you are ignoring
-				labelledExamples.append(orange.Example(labelledDomain, attribs))
-				i += 1
-				
-			# Copy centroids and append the cluster number
-			labelledCentroids = list()
-			i = 0
-			for centroid in bestClusterer.centroids:
-				attribs = list()
-				for attrib in centroid:
-					attribs.append(attrib)
-				attribs.append(i) # use this line if the original data does not have labels
-				#attribs[len(attribs)-1] = i # use this line if the original data already has labels which you are ignoring
-				labelledCentroids.append(orange.Example(labelledDomain, attribs))
-				i += 1
-			"""
 			
 			# Save image of clustering
 			plot_scatter(data, bestClusterer, graphAttribute1, graphAttribute2, directory + key + "Image.png") # save clusters over dimension
 			orngClustering.plot_silhouette(bestClusterer, filename=(directory + key + "Silhouette.png"), fast=True) # save silhouette calcs
 			
-			"""
-			# Save examples with their cluster numbers
-			labelledData = orange.ExampleTable(labelledDomain, labelledExamples)
-			labelledData.save(directory + key + "Labelled" + ".tab")
-
-			# Save centroids with assigned cluster numbers
-			labelledCentroidData = orange.ExampleTable(labelledDomain, labelledCentroids)
-			labelledCentroidData.save(directory + key + "Centroids" + ".tab")
-			"""
-			
 			resultingClusterers[key] = bestClusterer
 			resultingClassifiers[key] = knn
 
-dumpfile = open(directory + "clusterers.pik", 'wc')
+print("------------------------------------------------------------")
+print "Saving clusterers and classifiers to files... ",
+			
+clusterersFilepath = directory + "clusterers.pik"
+dumpfile = open(clusterersFilepath, 'wc')
 pickler = pickle.Pickler(dumpfile)
 pickler.dump(resultingClusterers)
 dumpfile.close()
 
-dumpfile = open(directory + "classifiers.pik", 'wc')
+classifiersFilepath = directory + "classifiers.pik"
+dumpfile = open(classifiersFilepath, 'wc')
 pickler = pickle.Pickler(dumpfile)
 pickler.dump(resultingClassifiers)
 dumpfile.close()
+
+print "Done."
+
+print("------------------------------------------------------------")
+print "Classifying players based on constructed classifiers... ",
+
+def createPlayerDataMap(playerName, totalDataPlusNames):
+	playerDataMap = dict()
+	playerData = totalDataPlusNames.filter({"Player" : playerName})
+	
+	for phase in phases:
+		for potLevel in potLevels:
+			for stackLevel in stackLevels:
+				key = makeKey(phase, potLevel, stackLevel)
+				
+				try:
+					filteredData = playerData.filter({"Phase" : phase, "Pot%" : potLevel, "Stack%" : stackLevel})
+				except:
+					playerDataMap[key] = None
+					continue
+					
+				if (len(filteredData) == 0):
+					playerDataMap[key] = None
+					continue
+					
+				playerDataMap[key] = orange.Example(reducedDomain, filteredData[0])
+				
+	return playerDataMap
+
+
+playersData = dict()
+pc = PlayerClassifier(classifiersFilepath)
+
+for d in totalDataPlusNames:
+	name = str(d["Player"])
+	if playersData.has_key(name):
+		continue
+	values = createPlayerDataMap(name, totalDataPlusNames)
+	playersData[name] = pc.label(name, values)
+	
+print "Done."
+playerFilepath = directory + "players.txt"
+print "Writing player clusters to file",playerFilepath,"... ",
+
+f = open(playerFilepath, "wc")
+for name,d in playersData.iteritems():
+	f.write(str(name) + "\t")
+	for phase in phases:
+		for potLevel in potLevels:
+			for stackLevel in stackLevels:
+				key = makeKey(phase, potLevel, stackLevel)
+				val = d[key]
+				f.write(str(val) + "\t")
+	f.write("\n")
+f.close()
+
+print "Done."
+

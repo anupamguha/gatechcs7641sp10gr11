@@ -61,6 +61,7 @@ public class Simulation {
       BufferedReader br = new BufferedReader(new FileReader(new File(dir + "hdb")));
       BufferedReader isr = new BufferedReader(new InputStreamReader(System.in));
       String line = br.readLine();
+      int failures = 0;
       while (line != null && next == true) {
     	  
 	    // skip bad game ids
@@ -87,6 +88,7 @@ public class Simulation {
 	    }
 	    catch (Exception e)
 	    {
+	    	failures++;
 	    	String id = line.split(" ")[0];
 	    	System.out.println("Skipping game " + id + " due to exception");
 	    	line = br.readLine();
@@ -110,6 +112,8 @@ public class Simulation {
       
       Tracker tracker = Tracker.getInstance();
       tracker.save("data/");
+      
+      System.out.println(failures);
       
       br.close();
       isr.close();
