@@ -5,7 +5,6 @@ import java.util.Collections;
 
 import simulator.deck.Card;
 import simulator.game.Action.ACTION;
-import simulator.stats.State;
 import simulator.stats.Stats;
 import simulator.stats.Tracker;
 
@@ -163,13 +162,13 @@ public class Game {
     Action a = null;
     int potIncrease = 0;
     int numPlayers = 0;
+    int playing = activePlayers.size();
     int bet = 0;
     int table = 0;
+    int numRaises = 0;
     
     // stat tracking stuffs
-    boolean track = false;
     Tracker tracker = Tracker.getInstance();
-    State state = null;
     Stats stats = null;
     
     // get total chips on table
@@ -188,6 +187,8 @@ public class Game {
     ArrayList<Player> foldList = new ArrayList<Player>();
     ArrayList<Player> checkList = new ArrayList<Player>();
     
+    ArrayList<Stats> phaseStats = new ArrayList<Stats>();
+    
     // all parameters set -- the game can be played
     System.out.println("----- Preflop -----");
     
@@ -199,14 +200,47 @@ public class Game {
           break;
         }
         
-        if (activePlayers.size() == Tracker.PLAYERS) {
-          track = true;
-        }
-        else {
-          track = false;
-        }
-        
         if (activePlayers.contains(p)) {
+          // set up stats
+          stats = new Stats();
+          
+          stats.setName(p.getName());
+          stats.setGame(timestamp);
+          stats.setNumPlayers(playing);
+          stats.setPhase(Stats.PHASE.PREFLOP);
+          stats.setPotSize(0);
+          stats.setPotPercentage(0);
+          stats.setLastPhasePercentage(p.getLastPhasePercent());
+          stats.setStackPercentage((double) p.getBankroll() / (double) table);
+          
+          int maxOpp = -1;
+          double oppStacks = 0;
+          int maxBets = -1;
+          
+          for (Player pl : activePlayers) {
+            if (pl.equals(p)) {
+              continue;
+            }
+            
+            if (pl.getBankroll() > maxOpp) {
+              maxOpp = pl.getBankroll();
+            }
+            
+            oppStacks += pl.getBankroll();
+            
+            if (pl.getBets() + pl.getRaises() > maxBets) {
+              maxBets = pl.getBets() + pl.getRaises();
+            }
+          }
+          
+          stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+          stats.setOppStackPercentage(oppStacks / (double) table);
+          
+          stats.setBets(p.getBets());
+          stats.setRaises(p.getRaises());
+          stats.setMaxOppBets(maxBets);
+          
+          // do action
           a = p.doNextPreflopAction();
           if (a == null) {
             done = true;
@@ -214,6 +248,8 @@ public class Game {
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
+            stats.setAction(ACTION.FOLD);
+            --playing;
             if (!union(betList, union(callList, raiseList)).contains(p)) {
               foldList.add(p);
             }
@@ -240,18 +276,26 @@ public class Game {
           }
           else {
             if (a.getAction() == ACTION.RAISE && !raiseList.contains(p)) {
+              stats.setAction(ACTION.RAISE);
+              ++numRaises;
+              p.addRaise();
               raiseList.add(p);
             }
             else if (a.getAction() == ACTION.CALL && !callList.contains(p)) {
+              stats.setAction(ACTION.CALL);
               callList.add(p);
             }
             else if (a.getAction() == ACTION.CHECK) {
+              stats.setAction(ACTION.CHECK);
               checkList.add(p);
             }
             else {
+              stats.setAction(ACTION.BET);
+              p.addBet();
               betList.add(p);
             }
           }
+          phaseStats.add(stats);
         }
       }
     }
@@ -263,90 +307,49 @@ public class Game {
     else {
       potIncrease = flopPot;
     }
+    
+    double avgRaise = 0;
+    
+    if (numRaises == 0) {
+      avgRaise = 0;
+    }
+    else {
+     avgRaise = (double) potIncrease / (double) numRaises;
+    }
+    
+    for (Stats s : phaseStats) {
+      s.setAvgRaise(avgRaise);
+      tracker.addStat(s);
+    }
+    
+    // reset stats stuff -- not needed until next phase
+    phaseStats.clear();
+    numRaises = 0;
 
     if (!betAndFoldList.isEmpty()) {
       for (Player p : betAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.PREFLOP);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent(0); // initially no chips bet, no pot
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addBet();
-          stats.addBetAmt(bet);
-
-          stats.addFold();
-          
-          tracker.addMapping(p, state, stats);
-        }
       }
     }
     
     if (!callAndFoldList.isEmpty()) {
       for (Player p : callAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.PREFLOP);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent(0); // initially no chips bet, no pot
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " called " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addCall();
-          if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }
       }
     }
     
     if (!raiseAndFoldList.isEmpty()) {
       for (Player p : raiseAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.PREFLOP);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent(0); // initially no chips bet, no pot
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " raised " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addRaise();
-          if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }
       }
     }
 
@@ -356,77 +359,9 @@ public class Game {
     }
 
     for (Player p : union(betList, union(callList, raiseList))) {
-      if (track) {
-        state = new State();
-        state.setPhase(State.Phase.PREFLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent(0); // initially no chips bet, no pot
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-      }
-
       table -= bet;
       p.decrementChipsPlayed(bet);
       System.out.println(p + " bet " + bet + " this hand");
-
-      if (track) {
-        // may be in more than one list
-        if (betList.contains(p))
-          stats.addBet();
-        if (callList.contains(p)) {
-          stats.addCall();
-        }
-        if (raiseList.contains(p)) 
-          stats.addRaise();
-        
-        stats.addBetAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      }
-    }
-
-    // for stat purposes, find out how much caused people to fold
-    if (track) {
-      for (Player p : foldList) {
-        state = new State();
-        state.setPhase(State.Phase.PREFLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent(0); // initially no chips bet, no pot
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addFold();
-        stats.addFoldAmt(bet);
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : checkList) {
-        state = new State();
-        state.setPhase(State.Phase.PREFLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent(0); // initially no chips bet, no pot
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addCheck();
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : union(betAndFoldList, union(callAndFoldList, raiseAndFoldList))) {
-        state = new State();
-        state.setPhase(State.Phase.PREFLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent(0); // initially no chips bet, no pot
-        
-        stats = tracker.getStats(p, state);
-        
-        stats.addFoldAmt(bet - p.getChipsPlayed());
-        
-        tracker.addMapping(p, state, stats);
-      }
     }
 
     // check if there are any players left
@@ -468,12 +403,46 @@ public class Game {
           done = true;
           break;
         }
-        if (activePlayers.size() == Tracker.PLAYERS) {
-          track = true;
+        // set up stats
+        stats = new Stats();
+        
+        stats.setName(p.getName());
+        stats.setGame(timestamp);
+        stats.setNumPlayers(playing);
+        stats.setPhase(Stats.PHASE.FLOP);
+        stats.setPotSize((double) flopPot / (double) table);
+        stats.setPotPercentage((double) p.getChipsBet() / (double) table);
+        stats.setLastPhasePercentage(p.getLastPhasePercent());
+        stats.setStackPercentage((double) p.getBankroll() / (double) table);
+        
+        int maxOpp = -1;
+        double oppStacks = 0;
+        int maxBets = -1;
+        
+        for (Player pl : activePlayers) {
+          if (pl.equals(p)) {
+            continue;
+          }
+          
+          if (pl.getBankroll() > maxOpp) {
+            maxOpp = pl.getBankroll();
+          }
+          
+          oppStacks += pl.getBankroll();
+          
+          if (pl.getBets() + pl.getRaises() > maxBets) {
+            maxBets = pl.getBets() + pl.getRaises();
+          }
         }
-        else {
-          track = false;
-        }
+        
+        stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+        stats.setOppStackPercentage(oppStacks / (double) table);
+        
+        stats.setBets(p.getBets());
+        stats.setRaises(p.getRaises());
+        stats.setMaxOppBets(maxBets);
+        
+        // do actions
         if (activePlayers.contains(p)) {
           a = p.doNextFlopAction();
           if (a == null) {
@@ -482,6 +451,8 @@ public class Game {
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
+            stats.setAction(ACTION.FOLD);
+            --playing;
             if (!union(betList, union(callList, raiseList)).contains(p)) {
               foldList.add(p);
             }
@@ -508,18 +479,26 @@ public class Game {
           }
           else {
             if (a.getAction() == ACTION.RAISE && !raiseList.contains(p)) {
+              ++numRaises;
+              stats.setAction(ACTION.RAISE);
+              p.addRaise();
               raiseList.add(p);
             }
             else if (a.getAction() == ACTION.CALL && !callList.contains(p)) {
+              stats.setAction(ACTION.CALL);
               callList.add(p);
             }
             else if (a.getAction() == ACTION.CHECK) {
+              stats.setAction(ACTION.CHECK);
               checkList.add(p);
             }
             else {
+              stats.setAction(ACTION.BET);
+              p.addBet();
               betList.add(p);
             }
           }
+          phaseStats.add(stats);
         }
       }
       //if (!activePlayers.get(0).hasNextFlopAction()) {
@@ -535,89 +514,48 @@ public class Game {
       potIncrease = turnPot - flopPot;
     }
     
+    
+    if (numRaises == 0) {
+      avgRaise = 0;
+    }
+    else {
+     avgRaise = (double) potIncrease / (double) numRaises;
+    }
+    
+    
+    for (Stats s : phaseStats) {
+      s.setAvgRaise(avgRaise);
+      tracker.addStat(s);
+    }
+    
+    // reset stats stuff -- not needed until next phase
+    phaseStats.clear();
+    numRaises = 0;
+    
     if (!betAndFoldList.isEmpty()) {
       for (Player p : betAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.FLOP);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) flopPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
-        System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addBet();
-          stats.addBetAmt(bet);
-
-          stats.addFold();
-          
-          tracker.addMapping(p, state, stats);
-        }   
+        System.out.println(p + " bet " + bet + " this hand, then folded");   
       }
     }
     
     if (!callAndFoldList.isEmpty()) {
       for (Player p : callAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.FLOP);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) flopPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addCall();
-          if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }   
       }
     }
     
     if (!raiseAndFoldList.isEmpty()) {
       for (Player p : raiseAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.FLOP);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) flopPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
-        System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addRaise();
-          if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }   
+        System.out.println(p + " bet " + bet + " this hand, then folded"); 
       }
     }
     
@@ -626,81 +564,12 @@ public class Game {
       bet = Math.abs(potIncrease / numPlayers);
     }
     
-    for (Player p : union(betList, union(callList, raiseList))) {
-      if (track) {
-        state = new State();
-        state.setPhase(State.Phase.FLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) flopPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-      }
-      
+    for (Player p : union(betList, union(callList, raiseList))) {      
       p.decrementChipsPlayed(bet);
       table -= bet;
       System.out.println(p + " bet " + bet + " this hand");
-      
-      if (track) {
-        // may be in more than one list
-        if (betList.contains(p))
-          stats.addBet();
-        if (callList.contains(p)) {
-          stats.addCall();
-        }
-        if (raiseList.contains(p)) 
-          stats.addRaise();
-        stats.addBetAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      }
     }
-    
-    // for stat purposes, find out how much caused people to fold
-    if (track) {
-      for (Player p : foldList) {
-        state = new State();
-        state.setPhase(State.Phase.FLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) flopPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addFold();
-        stats.addFoldAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : checkList) {
-        state = new State();
-        state.setPhase(State.Phase.FLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) flopPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addCheck();
-        
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : union(betAndFoldList, union(callAndFoldList, raiseAndFoldList))) {
-        state = new State();
-        state.setPhase(State.Phase.FLOP);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) flopPot / (double) table);
-        
-        stats = tracker.getStats(p, state);
-        
-        stats.addFoldAmt(bet - p.getChipsPlayed());
-        
-        tracker.addMapping(p, state, stats);
-      }
-    }
-  
+     
     // check if there are any players left
     if (activePlayers.size() == 1) { // someone won
       System.out.println("\nVictor:  " + activePlayers.get(0).toString() + " (" + showdownPot + ")");
@@ -738,12 +607,46 @@ public class Game {
           done = true;
           break;
         }
-        if (activePlayers.size() == Tracker.PLAYERS) {
-          track = true;
+        
+        // set up stats
+        stats = new Stats();
+        
+        stats.setName(p.getName());
+        stats.setGame(timestamp);
+        stats.setNumPlayers(playing);
+        stats.setPhase(Stats.PHASE.TURN);
+        stats.setPotSize((double) turnPot / (double) table);
+        stats.setPotPercentage((double) p.getChipsBet() / (double) table);
+        stats.setLastPhasePercentage(p.getLastPhasePercent());
+        stats.setStackPercentage((double) p.getBankroll() / (double) table);
+        
+        int maxOpp = -1;
+        double oppStacks = 0;
+        int maxBets = -1;
+        
+        for (Player pl : activePlayers) {
+          if (pl.equals(p)) {
+            continue;
+          }
+          
+          if (pl.getBankroll() > maxOpp) {
+            maxOpp = pl.getBankroll();
+          }
+          
+          oppStacks += pl.getBankroll();
+          
+          if (pl.getBets() + pl.getRaises() > maxBets) {
+            maxBets = pl.getBets() + pl.getRaises();
+          }
         }
-        else {
-          track = false;
-        }
+        
+        stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+        stats.setOppStackPercentage(oppStacks / (double) table);
+        
+        stats.setBets(p.getBets());
+        stats.setRaises(p.getRaises());
+        stats.setMaxOppBets(maxBets);
+        
         if (activePlayers.contains(p)) {
           a = p.doNextTurnAction();
           if (a == null) {
@@ -752,6 +655,8 @@ public class Game {
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
+            --playing;
+            stats.setAction(ACTION.FOLD);
             if (!union(betList, union(callList, raiseList)).contains(p)) {
               foldList.add(p);
             }
@@ -778,18 +683,26 @@ public class Game {
           }
           else {
             if (a.getAction() == ACTION.RAISE && !raiseList.contains(p)) {
+              ++numRaises;
+              p.addRaise();
+              stats.setAction(ACTION.RAISE);
               raiseList.add(p);
             }
             else if (a.getAction() == ACTION.CALL && !callList.contains(p)) {
+              stats.setAction(ACTION.CALL);
               callList.add(p);
             }
             else if (a.getAction() == ACTION.CHECK) {
+              stats.setAction(ACTION.CHECK);
               checkList.add(p);
             }
             else {
+              stats.setAction(ACTION.BET);
+              p.addBet();
               betList.add(p);
             }
           }
+          phaseStats.add(stats);
         }
       }
       //if (!activePlayers.get(0).hasNextTurnAction()) {
@@ -805,89 +718,47 @@ public class Game {
       potIncrease = riverPot - turnPot;
     }
     
+    if (numRaises == 0) {
+      avgRaise = 0;
+    }
+    else {
+     avgRaise = (double) potIncrease / (double) numRaises;
+    }
+    
+    
+    for (Stats s : phaseStats) {
+      s.setAvgRaise(avgRaise);
+      tracker.addStat(s);
+    }
+    
+    // reset stats stuff -- not needed until next phase
+    phaseStats.clear();
+    numRaises = 0;
+    
     if (!betAndFoldList.isEmpty()) {
       for (Player p : betAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.TURN);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) turnPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addBet();
-          stats.addBetAmt(bet);
-
-          stats.addFold();
-          
-          tracker.addMapping(p, state, stats);
-        }   
       }
     }   
     
     if (!callAndFoldList.isEmpty()) {
       for (Player p : callAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.TURN);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) turnPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addCall();
-          if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }   
       }
     }
     
     if (!raiseAndFoldList.isEmpty()) {
       for (Player p : raiseAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.TURN);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) turnPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
         System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addRaise();
-          if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }   
       }
     }
     
@@ -896,81 +767,12 @@ public class Game {
       bet = Math.abs(potIncrease / numPlayers);
     }
     
-    for (Player p : union(betList, union(callList, raiseList))) {
-      if (track) {
-        state = new State();
-        state.setPhase(State.Phase.TURN);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) turnPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-      }
-      
+    for (Player p : union(betList, union(callList, raiseList))) {   
       p.decrementChipsPlayed(bet);
       table -= bet;
       System.out.println(p + " bet " + bet + " this hand");
-      
-      if (track) {
-        // may be in more than one list
-        if (betList.contains(p))
-          stats.addBet();
-        if (callList.contains(p)) {
-          stats.addCall();
-        }
-        if (raiseList.contains(p)) 
-          stats.addRaise();
-        stats.addBetAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      }
     }
-    
-    // for stat purposes, find out how much caused people to fold
-    if (track) {
-      for (Player p : foldList) {
-        state = new State();
-        state.setPhase(State.Phase.TURN);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) turnPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addFold();
-        stats.addFoldAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      } 
       
-      for (Player p : checkList) {
-        state = new State();
-        state.setPhase(State.Phase.TURN);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) turnPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addCheck();
-        
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : union(betAndFoldList, union(callAndFoldList, raiseAndFoldList))) {
-        state = new State();
-        state.setPhase(State.Phase.TURN);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) turnPot / (double) table);
-        
-        stats = tracker.getStats(p, state);
-        
-        stats.addFoldAmt(bet - p.getChipsPlayed());
-        
-        tracker.addMapping(p, state, stats);
-      }
-    }
-    
     // check if there are any players left
     if (activePlayers.size() == 1) { // someone won
       System.out.println("\nVictor:  " + activePlayers.get(0).toString() + " (" + showdownPot + ")");
@@ -1011,12 +813,46 @@ public class Game {
           done = true;
           break;
         }
-        if (activePlayers.size() == Tracker.PLAYERS) {
-          track = true;
+        
+        // set up stats
+        stats = new Stats();
+        
+        stats.setName(p.getName());
+        stats.setGame(timestamp);
+        stats.setNumPlayers(playing);
+        stats.setPhase(Stats.PHASE.RIVER);
+        stats.setPotSize((double) riverPot / (double) table);
+        stats.setPotPercentage((double) p.getChipsBet() / (double) table);
+        stats.setLastPhasePercentage(p.getLastPhasePercent());
+        stats.setStackPercentage((double) p.getBankroll() / (double) table);
+        
+        int maxOpp = -1;
+        double oppStacks = 0;
+        int maxBets = -1;
+        
+        for (Player pl : activePlayers) {
+          if (pl.equals(p)) {
+            continue;
+          }
+          
+          if (pl.getBankroll() > maxOpp) {
+            maxOpp = pl.getBankroll();
+          }
+          
+          oppStacks += pl.getBankroll();
+          
+          if (pl.getBets() + pl.getRaises() > maxBets) {
+            maxBets = pl.getBets() + pl.getRaises();
+          }
         }
-        else {
-          track = false;
-        }
+        
+        stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+        stats.setOppStackPercentage(oppStacks / (double) table);
+        
+        stats.setBets(p.getBets());
+        stats.setRaises(p.getRaises());
+        stats.setMaxOppBets(maxBets);
+        
         if (activePlayers.contains(p)) {
           a = p.doNextRiverAction();
           if (a == null) {
@@ -1025,6 +861,8 @@ public class Game {
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
+            --playing;
+            stats.setAction(ACTION.FOLD);
             if (!union(betList, union(callList, raiseList)).contains(p)) {
               foldList.add(p);
             }
@@ -1047,26 +885,44 @@ public class Game {
             activePlayers.remove(p);
           }
           else if (a.getAction() == ACTION.ALL_IN) {
+            stats.setAction(ACTION.ALL_IN);
             activePlayers.remove(p);
             if (betList.contains(p)) {
               betList.remove(p);
+            }
+            if (raiseList.contains(p)) {
+              raiseList.remove(p);
+            }
+            if (callList.contains(p)) {
+              callList.remove(p);
+            }
+            if (checkList.contains(p)) {
+              checkList.remove(p);
             }
             allInList.add(p);
           }
           else {
             if (a.getAction() == ACTION.RAISE && !raiseList.contains(p)) {
               raiseList.add(p);
+              stats.setAction(ACTION.RAISE);
+              ++numRaises;
+              p.addRaise();
             }
             else if (a.getAction() == ACTION.CALL && !callList.contains(p)) {
               callList.add(p);
+              stats.setAction(ACTION.CALL);
             }
             else if (a.getAction() == ACTION.CHECK) {
+              stats.setAction(ACTION.CHECK);
               checkList.add(p);
             }
             else {
+              stats.setAction(ACTION.BET);
+              p.addBet();
               betList.add(p);
             }
           }
+          phaseStats.add(stats);
         }
       }
       //if (!activePlayers.get(0).hasNextRiverAction()) {
@@ -1077,108 +933,48 @@ public class Game {
     // calculate bet sizes
     potIncrease = showdownPot - riverPot;
     
+    if (numRaises == 0) {
+      avgRaise = 0;
+    }
+    else {
+     avgRaise = (double) potIncrease / (double) numRaises;
+    }
+    
+    
+    for (Stats s : phaseStats) {
+      s.setAvgRaise(avgRaise);
+      tracker.addStat(s);
+    }
+    
     if (!betAndFoldList.isEmpty()) {
       for (Player p : betAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.RIVER);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) riverPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
-        System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addBet();
-          stats.addBetAmt(bet);
-
-          stats.addFold();
-          
-          tracker.addMapping(p, state, stats);
-        }        
+        System.out.println(p + " bet " + bet + " this hand, then folded");  
       }
     }
     
     if (!callAndFoldList.isEmpty()) {
       for (Player p : callAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.RIVER);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) riverPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
-        System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addCall();
-          if (!betAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }        
+        System.out.println(p + " bet " + bet + " this hand, then folded");     
       }
     }
        
     if (!raiseAndFoldList.isEmpty()) {
       for (Player p : raiseAndFoldList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.RIVER);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) riverPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-        }
-
         bet = p.getChipsPlayed();
         potIncrease -= bet;
         table -= bet;
-        System.out.println(p + " bet " + bet + " this hand, then folded");
-
-        if (track) {
-          stats.addRaise();
-          if (!betAndFoldList.contains(p) && !callAndFoldList.contains(p)) {
-            stats.addBetAmt(bet);
-            stats.addFold();
-          }
-          
-          tracker.addMapping(p, state, stats);
-        }        
+        System.out.println(p + " bet " + bet + " this hand, then folded");      
       }
     }
     
     if (!allInList.isEmpty()) {
-      for (Player p : allInList) {
-        if (track) {
-          state = new State();
-          state.setPhase(State.Phase.RIVER);
-          state.setStackPercent((double) p.getBankroll() / (double) table);
-          state.setPotPercent((double) riverPot / (double) table);
-
-          stats = tracker.getStats(p, state);
-          stats.addSituation();
-          
-          stats.addAllIn();
-          
-          tracker.addMapping(p, state, stats);
-        }
-        
+      for (Player p : allInList) {        
         bet = p.getChipsPlayed();
         if (bet != 0) {
           potIncrease -= bet;
@@ -1194,79 +990,10 @@ public class Game {
       bet = Math.abs(potIncrease / numPlayers);
     }
     
-    for (Player p : union(betList, union(callList, raiseList))) {
-      if (track) {
-        state = new State();
-        state.setPhase(State.Phase.RIVER);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) riverPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-      }
-      
+    for (Player p : union(betList, union(callList, raiseList))) {     
       p.decrementChipsPlayed(bet);
       table -= bet;
       System.out.println(p + " bet " + bet + " this hand");
-       
-      if (track) {
-        // may be in more than one list
-        if (betList.contains(p))
-          stats.addBet();
-        if (callList.contains(p)) {
-          stats.addCall();
-        }
-        if (raiseList.contains(p)) 
-          stats.addRaise();
-        stats.addBetAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      }
-    }
-    
-    // for stat purposes, find out how much caused people to fold
-    if (track) {
-      for (Player p : foldList) {
-        state = new State();
-        state.setPhase(State.Phase.RIVER);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) riverPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addFold();
-        stats.addFoldAmt(bet);
-        
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : checkList) {
-        state = new State();
-        state.setPhase(State.Phase.RIVER);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) riverPot / (double) table);
-
-        stats = tracker.getStats(p, state);
-        stats.addSituation();
-
-        stats.addCheck();
-        
-        tracker.addMapping(p, state, stats);
-      } 
-      
-      for (Player p : union(betAndFoldList, union(callAndFoldList, raiseAndFoldList))) {
-        state = new State();
-        state.setPhase(State.Phase.RIVER);
-        state.setStackPercent((double) p.getBankroll() / (double) table);
-        state.setPotPercent((double) riverPot / (double) table);
-        
-        stats = tracker.getStats(p, state);
-        
-        stats.addFoldAmt(bet - p.getChipsPlayed());
-        
-        tracker.addMapping(p, state, stats);
-      }
     }
   
     activePlayers.addAll(allInList);

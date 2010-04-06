@@ -79,7 +79,7 @@ public class Simulation {
       }
       
       Tracker tracker = Tracker.getInstance();
-      tracker.save("data/");
+      tracker.save("stats.tab");
       
       br.close();
       isr.close();
