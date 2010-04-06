@@ -1,133 +1,108 @@
 package simulator.stats;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+
+import simulator.game.Action;
 
 public class Stats {
   
-  private double numSituations;
+  public enum PHASE {
+    PREFLOP, FLOP, TURN, RIVER
+  };
   
-  private double bets;
-  private double raises;
-  private double calls;
-  private double folds;
-  private double allIn;
-  private double check;
+  private String name;
+  private int cluster;
+  private int game;
+  private int numPlayers;
+  private PHASE phase;
+  private boolean pay;
+  private double avgRaise;
+  private double potSize;
+  private double potPercentage;
+  private double lastPhasePercentage;
+  private double stackPercentage;
+  private double maxOppStackPercentage;
+  private double oppStackPercentage;
+  private int bets;
+  private int raises;
+  private int maxOppBets;
   
-  private ArrayList<Integer> betAmount;
-  private ArrayList<Integer> foldAmount;
+  private Action.ACTION action;
   
-  public Stats() {
-    betAmount = new ArrayList<Integer>();
-    foldAmount = new ArrayList<Integer>();
-    
-    numSituations = 0;
-    
-    bets = 0;
-    folds = 0;
-    allIn = 0;
-  }
   
-  public void addSituation() {
-    ++numSituations;
-  }
-  public void addBet() {
-    ++bets;
-  }
-  public void addFold() {
-    ++folds;
-  }
-  public void addAllIn() {
-    ++allIn;
-  }
-  public void addRaise() {
-    ++raises;
-  }
-  public void addCall() {
-    ++calls;
-  }
-  public void addCheck() {
-    ++check;
-  }
+  DecimalFormat four = new DecimalFormat("#0.0000");
   
-  public void addBetAmt(int amt) {
-    betAmount.add(amt);
+  public void setName(String name) {
+    this.name = name;
   }
-  public void addFoldAmt(int amt) {
-    foldAmount.add(amt);
+  public void setCluster(int cluster) {
+    this.cluster = cluster;
   }
-  
-  public ArrayList<Double> calculate() {
-    ArrayList<Double> results = new ArrayList<Double>();
+  public void setGame(int game) {
+    this.game = game;
+  }
+  public void setNumPlayers(int numPlayers) {
+    this.numPlayers = numPlayers;
+  }
+  public void setPhase(PHASE phase) {
+    this.phase = phase;
+  }
+  public void setPay(boolean pay) {
+    this.pay = pay;
+  }
+  public void setAvgRaise(double avgRaise) {
+    this.avgRaise = avgRaise;
+  }
+  public void setPotSize(double potSize) {
+    this.potSize = potSize;
+  }
+  public void setPotPercentage(double potPercentage) {
+    this.potPercentage = potPercentage;
+  }
+  public void setLastPhasePercentage(double lastPhasePercentage) {
+    this.lastPhasePercentage = lastPhasePercentage;
+  }
+  public void setStackPercentage(double stackPercentage) {
+    this.stackPercentage = stackPercentage;
+  }
+  public void setMaxOppStackPercentage(double maxOppStackPercentage) {
+    this.maxOppStackPercentage = maxOppStackPercentage;
+  }
+  public void setOppStackPercentage(double oppStackPercentage) {
+    this.oppStackPercentage = oppStackPercentage;
+  }
+  public void setBets(int bets) {
+    this.bets = bets;
+  }
+  public void setRaises(int raises) {
+    this.raises = raises;
+  }
+  public void setMaxOppBets(int maxOppBets) {
+    this.maxOppBets = maxOppBets;
+  }
+  public void setAction(Action.ACTION action) {
+    this.action = action;
+  }
+  /* (non-Javadoc)
+   * @see java.lang.Object#toString()
+   */
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
     
-    // check percentage
-    double checkPercentage = check / numSituations;
-    results.add(checkPercentage);
-    
-    // bet percentage
-    double betPercentage = bets / numSituations;
-    results.add(betPercentage);
-    
-    // call percentage
-    double callPercentage = calls / numSituations;
-    results.add(callPercentage);
-    
-    // raise percentage
-    double raisePercentage = raises / numSituations;
-    results.add(raisePercentage);
-    
-    // calculate average raise amount
-    if ((bets + calls + raises) == 0) {
-      results.add(0.0);
-      results.add(0.0);
+    sb.append(name).append("\t").append(cluster).append("\t").append(game).append("\t");
+    sb.append(numPlayers).append("\t").append(phase.toString()).append("\t").append(pay).append("\t");
+    sb.append(four.format(avgRaise)).append("\t").append(four.format(potSize)).append("\t").append(four.format(potPercentage)).append("\t");
+    sb.append(four.format(lastPhasePercentage)).append("\t").append(four.format(stackPercentage)).append("\t");
+    sb.append(four.format(maxOppStackPercentage)).append("\t").append(four.format(oppStackPercentage)).append("\t");
+    sb.append(bets).append("\t").append(raises).append("\t").append(maxOppBets).append("\t");
+    if (action != null) {
+      sb.append(action.toString());
     }
-    else {
-      double sum = 0;
+    sb.append("\n");
     
-      for (Integer i : betAmount) {
-        sum += i;
-      }
+    return sb.toString();
     
-      double betAvg = sum / (bets + calls + raises);
-      results.add(betAvg);
-    
-    
-      // calculate raise std dev
-      double squares = 0;
-    
-      for (Integer i : betAmount) {
-        squares += Math.pow((i - betAvg), 2);
-      }
-    
-      double raiseStdDev = Math.sqrt(squares / (bets + calls + raises));
-      results.add(raiseStdDev);
-    }
-    
-    // all in percentage
-    double aiPercentage = allIn / numSituations;
-    results.add(aiPercentage);
-    
-    // fold percentage
-    double foldPercentage = folds / numSituations;
-    results.add(foldPercentage);
-    
-    // average amount causing a fold
-    if (folds == 0) { // if no folds, will cause / by 0
-      results.add(0.0);
-    }
-    else {
-      double sum = 0;
-    
-      for (Integer i : foldAmount) {
-        sum += i;
-      }
-    
-      double foldAvg = sum / folds;
-      results.add(foldAvg);
-    }
-    
-    
-    return results;
   }
-  
 
 }

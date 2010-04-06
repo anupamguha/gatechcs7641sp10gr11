@@ -64,6 +64,10 @@ public class Player implements Comparable {
    */
   private int location;
   
+  private int bets;
+  private int raises;
+  private double lastPhasePercent = 0.0;
+  
   /**
    * Sets the player's hand
    * 
@@ -77,6 +81,27 @@ public class Player implements Comparable {
       Card c = new Card(h[i]);
       hand.addCard(c);
     }
+  }
+  
+  public void addBet() {
+    ++bets;
+  }
+  public void addRaise() {
+    ++raises;
+  }
+  
+  public int getBets() {
+    return bets;
+  }
+  public int getRaises() {
+    return raises;
+  }
+  
+  public void setLastPhasePercent(double percent) {
+    lastPhasePercent = percent;
+  }
+  public double getLastPhasePercent() {
+    return lastPhasePercent;
   }
   
   /**
@@ -115,6 +140,9 @@ public class Player implements Comparable {
    */
   public void setName(String name) {
     this.name = name;
+  }
+  public String getName() {
+    return name;
   }
   
   /**
