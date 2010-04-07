@@ -5,6 +5,8 @@ import java.util.Collections;
 
 import simulator.deck.Card;
 import simulator.game.Action.ACTION;
+import simulator.stats.PlayerClusters;
+import simulator.stats.State;
 import simulator.stats.Stats;
 import simulator.stats.Tracker;
 
@@ -170,6 +172,7 @@ public class Game {
     // stat tracking stuffs
     Tracker tracker = Tracker.getInstance();
     Stats stats = null;
+    State state = null;
     
     // get total chips on table
     for (Player p : players) {
@@ -189,6 +192,8 @@ public class Game {
     
     ArrayList<Stats> phaseStats = new ArrayList<Stats>();
     
+    ArrayList<ActTrack> actions = new ArrayList<ActTrack>();
+    
     // all parameters set -- the game can be played
     System.out.println("----- Preflop -----");
     
@@ -201,6 +206,15 @@ public class Game {
         }
         
         if (activePlayers.contains(p)) {
+          
+          // do action
+          a = p.doNextPreflopAction();
+          
+          if (a == null) {
+            done = true;
+            break;
+          }
+          
           // set up stats
           stats = new Stats();
           
@@ -211,6 +225,7 @@ public class Game {
           stats.setPotSize(0);
           stats.setPotPercentage(0);
           stats.setLastPhasePercentage(p.getLastPhasePercent());
+          p.setLastPhasePercent(0);
           stats.setStackPercentage((double) p.getBankroll() / (double) table);
           
           int maxOpp = -1;
@@ -240,12 +255,79 @@ public class Game {
           stats.setRaises(p.getRaises());
           stats.setMaxOppBets(maxBets);
           
-          // do action
-          a = p.doNextPreflopAction();
-          if (a == null) {
-            done = true;
-            break;
+          // get player cluster
+          state = new State();
+          state.setPhase(State.Phase.PREFLOP);
+          state.setStackPercent((double) p.getBankroll() / (double) table);
+          state.setPotPercent(0);
+          
+          stats.setCluster(PlayerClusters.getCluster(p.getName(), state));
+          
+          // check if bet required to keep playing
+          ActTrack act = new ActTrack();
+          act.setAction(a);
+          act.setName(p.getName());
+          
+          ActTrack preAct = null;
+          
+          if (actions.contains(act)) {
+            preAct = actions.get(actions.indexOf(act));
           }
+          
+          if (preAct == null) { // current player has not played yet this phase
+            // check if a bet has been placed, if yes, need to play money to continue
+            
+            for (ActTrack at : actions) {
+              if (at.getAction() == null) {
+                continue;
+              }
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == ACTION.BET || at.getAction() == ACTION.BLIND) {
+                stats.setPay(true);
+                break;
+              }
+            }
+            actions.add(act);
+          }
+          else { // player has played -- need to see if need to add money
+            
+            // if player had not bet previously (check), then any bet means money
+            if (preAct.getAction().equals(ACTION.CHECK)) {
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.BET)) {
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            else { // betting action -- if a fold, won't be here
+              // need to see if anyone raised since this player last played
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.RAISE) || at.getAction() == ACTION.BLIND){
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            // remove old preAct and add current action
+            actions.remove(preAct);
+            actions.add(act);
+          }
+          
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
             stats.setAction(ACTION.FOLD);
@@ -290,7 +372,12 @@ public class Game {
               checkList.add(p);
             }
             else {
-              stats.setAction(ACTION.BET);
+              if (a.getAction() == ACTION.BLIND) {
+                stats.setAction(ACTION.BLIND);
+              }
+              else {
+                stats.setAction(ACTION.BET);
+              }
               p.addBet();
               betList.add(p);
             }
@@ -298,7 +385,11 @@ public class Game {
           phaseStats.add(stats);
         }
       }
+    }    
+    for (Player pl : activePlayers) {
+      pl.setLastPhasePercent((double) pl.getChipsBet() / (double) table);
     }
+    
     
     // calculate bet sizes
     if (activePlayers.size() == 1) {
@@ -389,6 +480,7 @@ public class Game {
     raiseAndFoldList.clear();
     foldList.clear();
     checkList.clear();
+    actions.clear();
 
     System.out.println("\n----- Flop -----");
     
@@ -403,44 +495,6 @@ public class Game {
           done = true;
           break;
         }
-        // set up stats
-        stats = new Stats();
-        
-        stats.setName(p.getName());
-        stats.setGame(timestamp);
-        stats.setNumPlayers(playing);
-        stats.setPhase(Stats.PHASE.FLOP);
-        stats.setPotSize((double) flopPot / (double) table);
-        stats.setPotPercentage((double) p.getChipsBet() / (double) table);
-        stats.setLastPhasePercentage(p.getLastPhasePercent());
-        stats.setStackPercentage((double) p.getBankroll() / (double) table);
-        
-        int maxOpp = -1;
-        double oppStacks = 0;
-        int maxBets = -1;
-        
-        for (Player pl : activePlayers) {
-          if (pl.equals(p)) {
-            continue;
-          }
-          
-          if (pl.getBankroll() > maxOpp) {
-            maxOpp = pl.getBankroll();
-          }
-          
-          oppStacks += pl.getBankroll();
-          
-          if (pl.getBets() + pl.getRaises() > maxBets) {
-            maxBets = pl.getBets() + pl.getRaises();
-          }
-        }
-        
-        stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
-        stats.setOppStackPercentage(oppStacks / (double) table);
-        
-        stats.setBets(p.getBets());
-        stats.setRaises(p.getRaises());
-        stats.setMaxOppBets(maxBets);
         
         // do actions
         if (activePlayers.contains(p)) {
@@ -449,6 +503,119 @@ public class Game {
             done = true;
             break;
           }
+          // set up stats
+          stats = new Stats();
+
+          stats.setName(p.getName());
+          stats.setGame(timestamp);
+          stats.setNumPlayers(playing);
+          stats.setPhase(Stats.PHASE.FLOP);
+          stats.setPotSize((double) flopPot / (double) table);
+          stats.setPotPercentage((double) p.getChipsBet() / (double) table);
+          stats.setLastPhasePercentage(p.getLastPhasePercent());
+          p.setLastPhasePercent((double) p.getChipsBet() / (double) table);
+          stats.setStackPercentage((double) p.getBankroll() / (double) table);
+
+          int maxOpp = -1;
+          double oppStacks = 0;
+          int maxBets = -1;
+
+          for (Player pl : activePlayers) {
+            if (pl.equals(p)) {
+              continue;
+            }
+
+            if (pl.getBankroll() > maxOpp) {
+              maxOpp = pl.getBankroll();
+            }
+
+            oppStacks += pl.getBankroll();
+
+            if (pl.getBets() + pl.getRaises() > maxBets) {
+              maxBets = pl.getBets() + pl.getRaises();
+            }
+          }
+
+          stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+          stats.setOppStackPercentage(oppStacks / (double) table);
+
+          stats.setBets(p.getBets());
+          stats.setRaises(p.getRaises());
+          stats.setMaxOppBets(maxBets);
+
+          // get player cluster
+          state = new State();
+          state.setPhase(State.Phase.FLOP);
+          state.setStackPercent((double) p.getBankroll() / (double) table);
+          state.setPotPercent((double) flopPot / (double) table);
+
+          stats.setCluster(PlayerClusters.getCluster(p.getName(), state));
+
+          // check if bet required to keep playing
+          ActTrack act = new ActTrack();
+          act.setAction(a);
+          act.setName(p.getName());
+          
+          ActTrack preAct = null;
+          
+          if (actions.contains(act)) {
+            preAct = actions.get(actions.indexOf(act));
+          }
+          
+          if (preAct == null) { // current player has not played yet this phase
+            // check if a bet has been placed, if yes, need to play money to continue
+            
+            for (ActTrack at : actions) {
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == null) {
+                continue;
+              }
+              if (at.getAction().equals(ACTION.BET)) {
+                stats.setPay(true);
+                break;
+              }
+            }
+            actions.add(act);
+          }
+          else { // player has played -- need to see if need to add money
+            
+            // if player had not bet previously (check), then any bet means money
+            if (preAct.getAction().equals(ACTION.CHECK)) {
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.BET)) {
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            else { // betting action -- if a fold, won't be here
+              // need to see if anyone raised since this player last played
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.RAISE)){
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            // remove old preAct and add current action
+            actions.remove(preAct);
+            actions.add(act);
+          }
+          
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
             stats.setAction(ACTION.FOLD);
@@ -504,6 +671,10 @@ public class Game {
       //if (!activePlayers.get(0).hasNextFlopAction()) {
       //  done = true;
       //}
+    }
+    
+    for (Player pl : activePlayers) {
+      pl.setLastPhasePercent((double) pl.getChipsBet() / (double) table);
     }
     
     // calculate bet sizes
@@ -593,6 +764,7 @@ public class Game {
     raiseAndFoldList.clear();
     foldList.clear();
     checkList.clear();
+    actions.clear();
     
     System.out.println("\n----- Turn -----");
     
@@ -608,44 +780,6 @@ public class Game {
           break;
         }
         
-        // set up stats
-        stats = new Stats();
-        
-        stats.setName(p.getName());
-        stats.setGame(timestamp);
-        stats.setNumPlayers(playing);
-        stats.setPhase(Stats.PHASE.TURN);
-        stats.setPotSize((double) turnPot / (double) table);
-        stats.setPotPercentage((double) p.getChipsBet() / (double) table);
-        stats.setLastPhasePercentage(p.getLastPhasePercent());
-        stats.setStackPercentage((double) p.getBankroll() / (double) table);
-        
-        int maxOpp = -1;
-        double oppStacks = 0;
-        int maxBets = -1;
-        
-        for (Player pl : activePlayers) {
-          if (pl.equals(p)) {
-            continue;
-          }
-          
-          if (pl.getBankroll() > maxOpp) {
-            maxOpp = pl.getBankroll();
-          }
-          
-          oppStacks += pl.getBankroll();
-          
-          if (pl.getBets() + pl.getRaises() > maxBets) {
-            maxBets = pl.getBets() + pl.getRaises();
-          }
-        }
-        
-        stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
-        stats.setOppStackPercentage(oppStacks / (double) table);
-        
-        stats.setBets(p.getBets());
-        stats.setRaises(p.getRaises());
-        stats.setMaxOppBets(maxBets);
         
         if (activePlayers.contains(p)) {
           a = p.doNextTurnAction();
@@ -653,6 +787,120 @@ public class Game {
             done = true;
             break;
           }
+
+          // set up stats
+          stats = new Stats();
+
+          stats.setName(p.getName());
+          stats.setGame(timestamp);
+          stats.setNumPlayers(playing);
+          stats.setPhase(Stats.PHASE.TURN);
+          stats.setPotSize((double) turnPot / (double) table);
+          stats.setPotPercentage((double) p.getChipsBet() / (double) table);
+          stats.setLastPhasePercentage(p.getLastPhasePercent());
+          p.setLastPhasePercent((double) p.getChipsBet() / (double) table);
+          stats.setStackPercentage((double) p.getBankroll() / (double) table);
+
+          int maxOpp = -1;
+          double oppStacks = 0;
+          int maxBets = -1;
+
+          for (Player pl : activePlayers) {
+            if (pl.equals(p)) {
+              continue;
+            }
+
+            if (pl.getBankroll() > maxOpp) {
+              maxOpp = pl.getBankroll();
+            }
+
+            oppStacks += pl.getBankroll();
+
+            if (pl.getBets() + pl.getRaises() > maxBets) {
+              maxBets = pl.getBets() + pl.getRaises();
+            }
+          }
+
+          stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+          stats.setOppStackPercentage(oppStacks / (double) table);
+
+          stats.setBets(p.getBets());
+          stats.setRaises(p.getRaises());
+          stats.setMaxOppBets(maxBets);
+
+          // get player cluster
+          state = new State();
+          state.setPhase(State.Phase.TURN);
+          state.setStackPercent((double) p.getBankroll() / (double) table);
+          state.setPotPercent((double) turnPot / (double) table);
+
+          stats.setCluster(PlayerClusters.getCluster(p.getName(), state));
+
+          // check if bet required to keep playing
+          ActTrack act = new ActTrack();
+          act.setAction(a);
+          act.setName(p.getName());
+          
+          ActTrack preAct = null;
+          
+          if (actions.contains(act)) {
+            preAct = actions.get(actions.indexOf(act));
+          }
+          
+          if (preAct == null) { // current player has not played yet this phase
+            // check if a bet has been placed, if yes, need to play money to continue
+            
+            for (ActTrack at : actions) {
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == null) {
+                continue;
+              }
+              if (at.getAction().equals(ACTION.BET)) {
+                stats.setPay(true);
+                break;
+              }
+            }
+            actions.add(act);
+          }
+          else { // player has played -- need to see if need to add money
+            
+            // if player had not bet previously (check), then any bet means money
+            if (preAct.getAction().equals(ACTION.CHECK)) {
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.BET)) {
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            else { // betting action -- if a fold, won't be here
+              // need to see if anyone raised since this player last played
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.RAISE)){
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            // remove old preAct and add current action
+            actions.remove(preAct);
+            actions.add(act);
+          }
+          
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
             --playing;
@@ -709,6 +957,12 @@ public class Game {
       //  done = true;
       //}
     }
+    
+    
+    for (Player pl : activePlayers) {
+      pl.setLastPhasePercent((double) pl.getChipsBet() / (double) table);
+    }
+    
     
     // calculate bet sizes
     if (activePlayers.size() == 1) {
@@ -796,6 +1050,7 @@ public class Game {
     raiseAndFoldList.clear();
     foldList.clear();
     checkList.clear();
+    actions.clear();
     
     System.out.println("\n----- River -----");
     
@@ -814,51 +1069,129 @@ public class Game {
           break;
         }
         
-        // set up stats
-        stats = new Stats();
-        
-        stats.setName(p.getName());
-        stats.setGame(timestamp);
-        stats.setNumPlayers(playing);
-        stats.setPhase(Stats.PHASE.RIVER);
-        stats.setPotSize((double) riverPot / (double) table);
-        stats.setPotPercentage((double) p.getChipsBet() / (double) table);
-        stats.setLastPhasePercentage(p.getLastPhasePercent());
-        stats.setStackPercentage((double) p.getBankroll() / (double) table);
-        
-        int maxOpp = -1;
-        double oppStacks = 0;
-        int maxBets = -1;
-        
-        for (Player pl : activePlayers) {
-          if (pl.equals(p)) {
-            continue;
-          }
-          
-          if (pl.getBankroll() > maxOpp) {
-            maxOpp = pl.getBankroll();
-          }
-          
-          oppStacks += pl.getBankroll();
-          
-          if (pl.getBets() + pl.getRaises() > maxBets) {
-            maxBets = pl.getBets() + pl.getRaises();
-          }
-        }
-        
-        stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
-        stats.setOppStackPercentage(oppStacks / (double) table);
-        
-        stats.setBets(p.getBets());
-        stats.setRaises(p.getRaises());
-        stats.setMaxOppBets(maxBets);
-        
         if (activePlayers.contains(p)) {
           a = p.doNextRiverAction();
           if (a == null) {
             done = true;
             break;
           }
+
+          // set up stats
+          stats = new Stats();
+
+          stats.setName(p.getName());
+          stats.setGame(timestamp);
+          stats.setNumPlayers(playing);
+          stats.setPhase(Stats.PHASE.RIVER);
+          stats.setPotSize((double) riverPot / (double) table);
+          stats.setPotPercentage((double) p.getChipsBet() / (double) table);
+          stats.setLastPhasePercentage(p.getLastPhasePercent());
+          stats.setStackPercentage((double) p.getBankroll() / (double) table);
+
+          int maxOpp = -1;
+          double oppStacks = 0;
+          int maxBets = -1;
+
+          for (Player pl : activePlayers) {
+            if (pl.equals(p)) {
+              continue;
+            }
+
+            if (pl.getBankroll() > maxOpp) {
+              maxOpp = pl.getBankroll();
+            }
+
+            oppStacks += pl.getBankroll();
+
+            if (pl.getBets() + pl.getRaises() > maxBets) {
+              maxBets = pl.getBets() + pl.getRaises();
+            }
+          }
+
+          stats.setMaxOppStackPercentage((double) maxOpp / (double) table);
+          stats.setOppStackPercentage(oppStacks / (double) table);
+
+          stats.setBets(p.getBets());
+          stats.setRaises(p.getRaises());
+          stats.setMaxOppBets(maxBets);
+
+          // get player cluster
+          state = new State();
+          state.setPhase(State.Phase.RIVER);
+          state.setStackPercent((double) p.getBankroll() / (double) table);
+          state.setPotPercent((double) riverPot / (double) table);
+
+          stats.setCluster(PlayerClusters.getCluster(p.getName(), state));
+
+          
+          // check if bet required to keep playing
+          ActTrack act = new ActTrack();
+          act.setAction(a);
+          act.setName(p.getName());
+          
+          ActTrack preAct = null;
+          
+          if (actions.contains(act)) {
+            preAct = actions.get(actions.indexOf(act));
+          }
+          
+          if (preAct == null) { // current player has not played yet this phase
+            // check if a bet has been placed, if yes, need to play money to continue
+            
+            for (ActTrack at : actions) {
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == null) {
+                continue;
+              }
+              if (at.getAction().equals(ACTION.BET)) {
+                stats.setPay(true);
+                break;
+              }
+            }
+            actions.add(act);
+          }
+          else { // player has played -- need to see if need to add money
+            
+            // if player had not bet previously (check), then any bet means money
+            if (preAct.getAction().equals(ACTION.CHECK)) {
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.BET)) {
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            else { // betting action -- if a fold, won't be here
+              // need to see if anyone raised since this player last played
+              for (ActTrack at : actions) {
+                if (at.getName().equals(p.getName())) { // ignore this player's plays
+                  continue;
+                }
+                if (at.getAction() == null) {
+                  continue;
+                }
+                if (at.getAction().equals(ACTION.RAISE)){
+                  stats.setPay(true);
+                  break;
+                }
+              }
+            }
+            // remove old preAct and add current action
+            actions.remove(preAct);
+            actions.add(act);
+          }
+          
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
             --playing;
@@ -928,6 +1261,10 @@ public class Game {
       //if (!activePlayers.get(0).hasNextRiverAction()) {
       //  done = true;
       //}
+    }
+    
+    for (Player pl : activePlayers) {
+      pl.setLastPhasePercent((double) pl.getChipsBet() / (double) table);
     }
     
     // calculate bet sizes
@@ -1033,5 +1370,38 @@ public class Game {
     }
     
     return temp;
+  }
+  
+  private class ActTrack {
+    private String playerName;
+    private ACTION action;
+    
+    public void setName(String name) {
+      playerName = name;
+    }
+    
+    public void setAction(Action act) {
+      action = act.getAction();
+    }
+    
+    public ACTION getAction() {
+      return action;
+    }
+    public String getName() {
+      return playerName;
+    }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    public boolean equals(Object obj) {
+      if (!(obj instanceof ActTrack)) {
+        System.err.println("Cannot make comparison!");
+      }
+      
+      ActTrack track = (ActTrack) obj;
+      
+      return playerName.equals(track.playerName);
+    }
   }
 }

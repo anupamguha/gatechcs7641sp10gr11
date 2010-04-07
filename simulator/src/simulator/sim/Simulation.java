@@ -11,6 +11,7 @@ import java.util.HashMap;
 import simulator.deck.Card;
 import simulator.game.Game;
 import simulator.game.Player;
+import simulator.stats.PlayerClusters;
 import simulator.stats.Tracker;
 
 /**
@@ -58,6 +59,9 @@ public class Simulation {
     
     // iterate through game file, construct games and play them
     try {
+      // load player clusters
+      PlayerClusters.load("players.txt");
+      
       BufferedReader br = new BufferedReader(new FileReader(new File(dir + "hdb")));
       BufferedReader isr = new BufferedReader(new InputStreamReader(System.in));
       String line = br.readLine();
