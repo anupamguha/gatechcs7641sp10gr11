@@ -1,5 +1,7 @@
 package simulator.stats;
 
+import java.util.List;
+
 public class State {
   
   public enum Phase {
@@ -10,6 +12,10 @@ public class State {
     LOW, MEDIUM, HIGH
   };
   
+  public static final Phase[] PHASES = {Phase.PREFLOP, Phase.FLOP, Phase.TURN, Phase.RIVER};
+  public static final Amount[] POT_AMOUNTS = {Amount.LOW, Amount.MEDIUM, Amount.HIGH};
+  public static final Amount[] STACK_AMOUNTS = {Amount.LOW, Amount.MEDIUM, Amount.HIGH};
+  
   private Amount stackPercent;
   private Amount potPercent;
   private Phase phase;
@@ -17,6 +23,7 @@ public class State {
   public Amount getStackPercent() {
     return stackPercent;
   }
+  
   public void setStackPercent(double stackPercent) {
     if (stackPercent < .15) {
       this.stackPercent = Amount.LOW;
@@ -28,9 +35,16 @@ public class State {
       this.stackPercent = Amount.HIGH;
     }
   }
+  
+  public void setStackAmount(Amount stackPercent)
+  {
+	  this.stackPercent = stackPercent;
+  }
+  
   public Amount getPotPercent() {
     return potPercent;
   }
+  
   public void setPotPercent(double potPercent) {
     if (potPercent > 1) {
       this.potPercent = Amount.HIGH;
@@ -42,9 +56,16 @@ public class State {
       this.potPercent = Amount.MEDIUM;
     }
   }
+  
+  public void setPotPercent(Amount potPercent)
+  {
+	  this.potPercent = potPercent;
+  }
+  
   public Phase getPhase() {
     return phase;
   }
+  
   public void setPhase(Phase phase) {
     this.phase = phase;
   }
@@ -71,5 +92,44 @@ public class State {
     return phase.hashCode() + potPercent.hashCode() + stackPercent.hashCode();
   }
   
-
+  public int getClusterIndex() {
+	int ix = 0;
+	switch(phase)
+	{
+	case PREFLOP:
+		break;
+	case FLOP:
+		ix += 9;
+		break;
+	case TURN:
+		ix += 18;
+		break;
+	case RIVER:
+		ix += 27;
+		break;
+	}
+	switch (potPercent)
+	{
+	case LOW:
+		break;
+	case MEDIUM:
+		ix += 3;
+		break;
+	case HIGH:
+		ix += 6;
+		break;
+	}
+	switch (stackPercent)
+	{
+	case LOW:
+		break;
+	case MEDIUM:
+		ix += 1;
+		break;
+	case HIGH:
+		ix += 2;
+		break;
+	}	
+	return ix;
+  }
 }
