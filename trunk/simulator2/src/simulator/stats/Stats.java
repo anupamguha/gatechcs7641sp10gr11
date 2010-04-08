@@ -129,5 +129,10 @@ public class Stats {
     return results;
   }
   
+  public double getNumSituations()
+  {
+	  return this.numSituations;
+  }
+  
 
 }
