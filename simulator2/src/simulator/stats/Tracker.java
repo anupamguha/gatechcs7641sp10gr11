@@ -10,6 +10,8 @@ import java.util.HashMap;
 import simulator.game.Player;
 
 public class Tracker {
+	
+  private static final int MIN_NUM_SITUATIONS = 10;
   
   private static Tracker instance = null;
   
@@ -72,6 +74,12 @@ public class Tracker {
         HashMap<State, Stats> sts = stats.get(p);
         
         for (State s : sts.keySet()) {
+        	
+        	Stats st = sts.get(s);
+        	
+        	if (st.getNumSituations() < MIN_NUM_SITUATIONS)
+        		continue;
+        	
           sb.delete(0, sb.length());
           
           sb.delete(0, sb.length());
@@ -80,8 +88,6 @@ public class Tracker {
 
           sb.append(s.getPhase()).append("\t").append(s.getPotPercent());
           sb.append("\t").append(s.getStackPercent());
-
-          Stats st = sts.get(s);
 
           ArrayList<Double> results = st.calculate();
 
