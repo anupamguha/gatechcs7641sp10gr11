@@ -25,16 +25,57 @@ public class State {
   }
   
   public void setStackPercent(double stackPercent) {
-    if (stackPercent < .15) {
-      this.stackPercent = Amount.LOW;
-    }
-    else if (stackPercent < .3) {
-      this.stackPercent = Amount.MEDIUM;
-    }
-    else {
-      this.stackPercent = Amount.HIGH;
-    }
-  }
+	  
+		switch(phase)
+		{
+		case PREFLOP:
+			if (stackPercent < .10) {
+			      this.stackPercent = Amount.LOW;
+			    }
+			    else if (stackPercent < .15) {
+			      this.stackPercent = Amount.MEDIUM;
+			    }
+			    else {
+			      this.stackPercent = Amount.HIGH;
+			    }
+			break;
+		case FLOP:
+			if (stackPercent < .12) {
+			      this.stackPercent = Amount.LOW;
+			    }
+			    else if (stackPercent < .25) {
+			      this.stackPercent = Amount.MEDIUM;
+			    }
+			    else {
+			      this.stackPercent = Amount.HIGH;
+			    }
+			
+			break;
+		case TURN:
+			if (stackPercent < .13) {
+			      this.stackPercent = Amount.LOW;
+			    }
+			    else if (stackPercent < .35) {
+			      this.stackPercent = Amount.MEDIUM;
+			    }
+			    else {
+			      this.stackPercent = Amount.HIGH;
+			    }
+			break;
+		case RIVER:
+			if (stackPercent < .04) {
+			      this.stackPercent = Amount.LOW;
+			    }
+			    else if (stackPercent < .35) {
+			      this.stackPercent = Amount.MEDIUM;
+			    }
+			    else {
+			      this.stackPercent = Amount.HIGH;
+			    }
+			break;
+		}
+ 
+}
   
   public void setStackAmount(Amount stackPercent)
   {
@@ -46,15 +87,53 @@ public class State {
   }
   
   public void setPotPercent(double potPercent) {
-    if (potPercent > 1) {
-      this.potPercent = Amount.HIGH;
-    }
-    else if (potPercent < .5) {
-      this.potPercent = Amount.LOW;
-    }
-    else {
-      this.potPercent = Amount.MEDIUM;
-    }
+	  switch(phase)
+		{
+		case PREFLOP:
+			if (potPercent > .01) {
+			      this.potPercent = Amount.HIGH;
+			    }
+			    else if (potPercent == 0) {
+			      this.potPercent = Amount.LOW;
+			    }
+			    else {
+			      this.potPercent = Amount.MEDIUM;
+			    }
+			break;
+		case FLOP:
+			if (potPercent > .02) {
+			      this.potPercent = Amount.HIGH;
+			    }
+			    else if (potPercent < .005) {
+			      this.potPercent = Amount.LOW;
+			    }
+			    else {
+			      this.potPercent = Amount.MEDIUM;
+			    }
+			break;
+		case TURN:
+			if (potPercent > .05) {
+			      this.potPercent = Amount.HIGH;
+			    }
+			    else if (potPercent < .02) {
+			      this.potPercent = Amount.LOW;
+			    }
+			    else {
+			      this.potPercent = Amount.MEDIUM;
+			    }
+			break;
+		case RIVER:
+			if (potPercent > .1) {
+			      this.potPercent = Amount.HIGH;
+			    }
+			    else if (potPercent < .05) {
+			      this.potPercent = Amount.LOW;
+			    }
+			    else {
+			      this.potPercent = Amount.MEDIUM;
+			    }
+			break;
+		}
   }
   
   public void setPotPercent(Amount potPercent)
