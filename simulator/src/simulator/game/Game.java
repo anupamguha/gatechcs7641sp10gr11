@@ -194,8 +194,6 @@ public class Game {
     
     ArrayList<ActTrack> actions = new ArrayList<ActTrack>();
     
-    ArrayList<Player> nullList = new ArrayList<Player>();
-    
     // all parameters set -- the game can be played
     System.out.println("----- Preflop -----");
     
@@ -219,7 +217,6 @@ public class Game {
           
           if (a.getAction() == null) {
             activePlayers.remove(p);
-            nullList.add(p);
             continue;
           }
           
@@ -534,7 +531,6 @@ public class Game {
           
           if (a.getAction() == null) {
             activePlayers.remove(p);
-            nullList.add(p);
             continue;
           }
           // set up stats
@@ -845,7 +841,6 @@ public class Game {
           
           if (a.getAction() == null) {
             activePlayers.remove(p);
-            nullList.add(p);
             continue;
           }
 
@@ -1159,7 +1154,6 @@ public class Game {
           
           if (a.getAction() == null) {
             activePlayers.remove(p);
-            nullList.add(p);
             continue;
           }
 
