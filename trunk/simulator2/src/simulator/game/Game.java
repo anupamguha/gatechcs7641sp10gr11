@@ -212,6 +212,10 @@ public class Game {
             done = true;
             break;
           }
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            continue;
+          }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
             if (!union(betList, union(callList, raiseList)).contains(p)) {
@@ -441,6 +445,10 @@ public class Game {
     }
 
     System.out.println("Total pot:  " + flopPot);
+    
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
 
     // now need to show the flop and do flop actions
     community.addCard(cards[0]);
@@ -479,6 +487,10 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            continue;
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
@@ -714,6 +726,10 @@ public class Game {
     
     System.out.println("Total pot:  " + turnPot);
     
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
+    
     // add turn to community and do turn actions
     community.addCard(cards[3]);
     betList.clear();
@@ -749,6 +765,10 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            continue;
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
@@ -984,6 +1004,10 @@ public class Game {
     
     System.out.println("Total pot:  " + riverPot);
     
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
+    
     // add river to community and do river actions
     community.addCard(cards[4]);
     betList.clear();
@@ -1022,6 +1046,10 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            continue;
           }
           if (a.getAction() == ACTION.FOLD) {
             activePlayers.remove(p);
@@ -1270,6 +1298,10 @@ public class Game {
     }
   
     activePlayers.addAll(allInList);
+    
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
     
     // by this point, someone has won
     // possibly more than one player though, so need to find out who
