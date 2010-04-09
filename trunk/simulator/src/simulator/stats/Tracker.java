@@ -41,7 +41,7 @@ public class Tracker {
       sb.append("AvgRaise").append("\t").append("PotSize").append("\t").append("Pot%").append("\t");
       sb.append("LastPhase%").append("\t").append("Stack%").append("\t").append("MaxOppStack%").append("\t");
       sb.append("OppsStack%").append("\t").append("Bets").append("\t").append("Raises").append("\t");
-      sb.append("MaxOppBets").append("\t").append("Action").append("\n");
+      sb.append("MaxOppBets").append("\t").append("FoldAmt").append("\t").append("Action").append("\n");
       
       bw.write(sb.toString());
       
@@ -53,7 +53,7 @@ public class Tracker {
       sb.append("c").append("\t").append("c").append("\t").append("c").append("\t");
       sb.append("c").append("\t").append("c").append("\t").append("c").append("\t");
       sb.append("c").append("\t").append("c").append("\t").append("c").append("\t");
-      sb.append("c").append("\t").append("d").append("\n");
+      sb.append("c").append("\t").append("c").append("\t").append("d").append("\n");
       
       bw.write(sb.toString());
       
@@ -61,7 +61,7 @@ public class Tracker {
       
       sb.append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t");
       sb.append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t");
-      sb.append("\t").append("\t").append("class").append("\n");
+      sb.append("\t").append("\t").append("\t").append("class").append("\n");
       
       // write stats to file
       bw.write(sb.toString());
