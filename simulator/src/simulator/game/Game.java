@@ -194,6 +194,8 @@ public class Game {
     
     ArrayList<ActTrack> actions = new ArrayList<ActTrack>();
     
+    ArrayList<Player> nullList = new ArrayList<Player>();
+    
     // all parameters set -- the game can be played
     System.out.println("----- Preflop -----");
     
@@ -213,6 +215,12 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            nullList.add(p);
+            continue;
           }
           
           // set up stats
@@ -267,6 +275,7 @@ public class Game {
           ActTrack act = new ActTrack();
           act.setAction(a);
           act.setName(p.getName());
+          int raises = 0;        
           
           ActTrack preAct = null;
           
@@ -286,7 +295,7 @@ public class Game {
               }
               if (at.getAction() == ACTION.BET || at.getAction() == ACTION.BLIND) {
                 stats.setPay(true);
-                break;
+                ++raises;
               }
             }
             actions.add(act);
@@ -304,7 +313,10 @@ public class Game {
                 }
                 if (at.getAction().equals(ACTION.BET)) {
                   stats.setPay(true);
-                  break;
+                  ++raises;
+                }
+                if (at.getAction().equals(ACTION.RAISE)) {
+                  ++raises;
                 }
               }
             }
@@ -319,13 +331,14 @@ public class Game {
                 }
                 if (at.getAction().equals(ACTION.RAISE) || at.getAction() == ACTION.BLIND){
                   stats.setPay(true);
-                  break;
+                  ++raises;
                 }
               }
             }
             // remove old preAct and add current action
             actions.remove(preAct);
             actions.add(act);
+            stats.setFoldAmt(raises);
           }
           
           if (a.getAction() == ACTION.FOLD) {
@@ -405,11 +418,22 @@ public class Game {
       avgRaise = 0;
     }
     else {
-     avgRaise = (double) potIncrease / (double) numRaises;
+     avgRaise = ((double) potIncrease / (double) numRaises) / (double) table;
     }
     
     for (Stats s : phaseStats) {
       s.setAvgRaise(avgRaise);
+      
+      double foldAmt = s.getFoldAmt();
+      
+      if (numRaises == 0) {
+        // will cause divide by zero error
+        s.setFoldAmt(0.0);
+      }
+      else {
+        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+      }
+      
       tracker.addStat(s);
     }
     
@@ -467,6 +491,10 @@ public class Game {
     }
 
     System.out.println("Total pot:  " + flopPot);
+    
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
 
     // now need to show the flop and do flop actions
     community.addCard(cards[0]);
@@ -502,6 +530,12 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            nullList.add(p);
+            continue;
           }
           // set up stats
           stats = new Stats();
@@ -556,6 +590,8 @@ public class Game {
           act.setAction(a);
           act.setName(p.getName());
           
+          int raises = 0;        
+          
           ActTrack preAct = null;
           
           if (actions.contains(act)) {
@@ -566,15 +602,15 @@ public class Game {
             // check if a bet has been placed, if yes, need to play money to continue
             
             for (ActTrack at : actions) {
-              if (at.getName().equals(p.getName())) { // ignore this player's plays
-                continue;
-              }
               if (at.getAction() == null) {
                 continue;
               }
-              if (at.getAction().equals(ACTION.BET)) {
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == ACTION.BET || at.getAction() == ACTION.BLIND) {
                 stats.setPay(true);
-                break;
+                ++raises;
               }
             }
             actions.add(act);
@@ -592,7 +628,10 @@ public class Game {
                 }
                 if (at.getAction().equals(ACTION.BET)) {
                   stats.setPay(true);
-                  break;
+                  ++raises;
+                }
+                if (at.getAction().equals(ACTION.RAISE)) {
+                  ++raises;
                 }
               }
             }
@@ -605,15 +644,16 @@ public class Game {
                 if (at.getAction() == null) {
                   continue;
                 }
-                if (at.getAction().equals(ACTION.RAISE)){
+                if (at.getAction().equals(ACTION.RAISE) || at.getAction() == ACTION.BLIND){
                   stats.setPay(true);
-                  break;
+                  ++raises;
                 }
               }
             }
             // remove old preAct and add current action
             actions.remove(preAct);
             actions.add(act);
+            stats.setFoldAmt(raises);
           }
           
           if (a.getAction() == ACTION.FOLD) {
@@ -690,12 +730,23 @@ public class Game {
       avgRaise = 0;
     }
     else {
-     avgRaise = (double) potIncrease / (double) numRaises;
+     avgRaise = ((double) potIncrease / (double) numRaises) / (double) table;
     }
     
     
     for (Stats s : phaseStats) {
       s.setAvgRaise(avgRaise);
+      
+      double foldAmt = s.getFoldAmt();
+      
+      if (numRaises == 0) {
+        // will cause divide by zero error
+        s.setFoldAmt(0.0);
+      }
+      else {
+        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+      }
+      
       tracker.addStat(s);
     }
     
@@ -754,6 +805,10 @@ public class Game {
     
     System.out.println("Total pot:  " + turnPot);
     
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
+    
     // add turn to community and do turn actions
     community.addCard(cards[3]);
     betList.clear();
@@ -786,6 +841,12 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            nullList.add(p);
+            continue;
           }
 
           // set up stats
@@ -840,6 +901,7 @@ public class Game {
           ActTrack act = new ActTrack();
           act.setAction(a);
           act.setName(p.getName());
+          int raises = 0;        
           
           ActTrack preAct = null;
           
@@ -851,15 +913,15 @@ public class Game {
             // check if a bet has been placed, if yes, need to play money to continue
             
             for (ActTrack at : actions) {
-              if (at.getName().equals(p.getName())) { // ignore this player's plays
-                continue;
-              }
               if (at.getAction() == null) {
                 continue;
               }
-              if (at.getAction().equals(ACTION.BET)) {
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == ACTION.BET || at.getAction() == ACTION.BLIND) {
                 stats.setPay(true);
-                break;
+                ++raises;
               }
             }
             actions.add(act);
@@ -877,7 +939,10 @@ public class Game {
                 }
                 if (at.getAction().equals(ACTION.BET)) {
                   stats.setPay(true);
-                  break;
+                  ++raises;
+                }
+                if (at.getAction().equals(ACTION.RAISE)) {
+                  ++raises;
                 }
               }
             }
@@ -890,15 +955,16 @@ public class Game {
                 if (at.getAction() == null) {
                   continue;
                 }
-                if (at.getAction().equals(ACTION.RAISE)){
+                if (at.getAction().equals(ACTION.RAISE) || at.getAction() == ACTION.BLIND){
                   stats.setPay(true);
-                  break;
+                  ++raises;
                 }
               }
             }
             // remove old preAct and add current action
             actions.remove(preAct);
             actions.add(act);
+            stats.setFoldAmt(raises);
           }
           
           if (a.getAction() == ACTION.FOLD) {
@@ -976,12 +1042,23 @@ public class Game {
       avgRaise = 0;
     }
     else {
-     avgRaise = (double) potIncrease / (double) numRaises;
+     avgRaise = ((double) potIncrease / (double) numRaises) / (double) table;
     }
     
     
     for (Stats s : phaseStats) {
       s.setAvgRaise(avgRaise);
+      
+      double foldAmt = s.getFoldAmt();
+      
+      if (numRaises == 0) {
+        // will cause divide by zero error
+        s.setFoldAmt(0.0);
+      }
+      else {
+        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+      }
+      
       tracker.addStat(s);
     }
     
@@ -1040,6 +1117,10 @@ public class Game {
     
     System.out.println("Total pot:  " + riverPot);
     
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
+    
     // add river to community and do river actions
     community.addCard(cards[4]);
     betList.clear();
@@ -1074,6 +1155,12 @@ public class Game {
           if (a == null) {
             done = true;
             break;
+          }
+          
+          if (a.getAction() == null) {
+            activePlayers.remove(p);
+            nullList.add(p);
+            continue;
           }
 
           // set up stats
@@ -1128,6 +1215,7 @@ public class Game {
           ActTrack act = new ActTrack();
           act.setAction(a);
           act.setName(p.getName());
+          int raises = 0;        
           
           ActTrack preAct = null;
           
@@ -1139,15 +1227,15 @@ public class Game {
             // check if a bet has been placed, if yes, need to play money to continue
             
             for (ActTrack at : actions) {
-              if (at.getName().equals(p.getName())) { // ignore this player's plays
-                continue;
-              }
               if (at.getAction() == null) {
                 continue;
               }
-              if (at.getAction().equals(ACTION.BET)) {
+              if (at.getName().equals(p.getName())) { // ignore this player's plays
+                continue;
+              }
+              if (at.getAction() == ACTION.BET || at.getAction() == ACTION.BLIND) {
                 stats.setPay(true);
-                break;
+                ++raises;
               }
             }
             actions.add(act);
@@ -1163,12 +1251,12 @@ public class Game {
                 if (at.getAction() == null) {
                   continue;
                 }
-                if (at.getAction() == null) {
-                  continue;
-                }
                 if (at.getAction().equals(ACTION.BET)) {
                   stats.setPay(true);
-                  break;
+                  ++raises;
+                }
+                if (at.getAction().equals(ACTION.RAISE)) {
+                  ++raises;
                 }
               }
             }
@@ -1181,15 +1269,16 @@ public class Game {
                 if (at.getAction() == null) {
                   continue;
                 }
-                if (at.getAction().equals(ACTION.RAISE)){
+                if (at.getAction().equals(ACTION.RAISE) || at.getAction() == ACTION.BLIND){
                   stats.setPay(true);
-                  break;
+                  ++raises;
                 }
               }
             }
             // remove old preAct and add current action
             actions.remove(preAct);
             actions.add(act);
+            stats.setFoldAmt(raises);
           }
           
           if (a.getAction() == ACTION.FOLD) {
@@ -1274,14 +1363,26 @@ public class Game {
       avgRaise = 0;
     }
     else {
-     avgRaise = (double) potIncrease / (double) numRaises;
+     avgRaise = ((double) potIncrease / (double) numRaises) / (double) table;
     }
     
     
     for (Stats s : phaseStats) {
       s.setAvgRaise(avgRaise);
+      
+      double foldAmt = s.getFoldAmt();
+      
+      if (numRaises == 0) {
+        // will cause divide by zero error
+        s.setFoldAmt(0.0);
+      }
+      else {
+        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+      }
+      
       tracker.addStat(s);
     }
+    
     
     if (!betAndFoldList.isEmpty()) {
       for (Player p : betAndFoldList) {
@@ -1334,6 +1435,10 @@ public class Game {
     }
   
     activePlayers.addAll(allInList);
+    
+    if (activePlayers.size() == 0) { // only actors left would have null actions
+      return;
+    }
     
     // by this point, someone has won
     // possibly more than one player though, so need to find out who

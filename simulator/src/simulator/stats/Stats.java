@@ -27,6 +27,7 @@ public class Stats {
   private int bets;
   private int raises;
   private int maxOppBets;
+  private double foldAmt;
   
   private Action.ACTION action;
   
@@ -84,6 +85,14 @@ public class Stats {
   public void setAction(Action.ACTION action) {
     this.action = action;
   }
+  
+  public void setFoldAmt(double amt) {
+    foldAmt = amt;
+  }
+  public double getFoldAmt() {
+    return foldAmt;
+  }
+  
   /* (non-Javadoc)
    * @see java.lang.Object#toString()
    */
@@ -95,7 +104,7 @@ public class Stats {
     sb.append(four.format(avgRaise)).append("\t").append(four.format(potSize)).append("\t").append(four.format(potPercentage)).append("\t");
     sb.append(four.format(lastPhasePercentage)).append("\t").append(four.format(stackPercentage)).append("\t");
     sb.append(four.format(maxOppStackPercentage)).append("\t").append(four.format(oppStackPercentage)).append("\t");
-    sb.append(bets).append("\t").append(raises).append("\t").append(maxOppBets).append("\t");
+    sb.append(bets).append("\t").append(raises).append("\t").append(maxOppBets).append("\t").append(four.format(foldAmt)).append("\t");
     if (action != null) {
       sb.append(action.toString());
     }

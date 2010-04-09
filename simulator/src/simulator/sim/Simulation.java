@@ -60,7 +60,7 @@ public class Simulation {
     // iterate through game file, construct games and play them
     try {
       // load player clusters
-      PlayerClusters.load("playerClusters.txt");
+      PlayerClusters.load("players.txt");
       
       BufferedReader br = new BufferedReader(new FileReader(new File(dir + "hdb")));
       BufferedReader isr = new BufferedReader(new InputStreamReader(System.in));
@@ -101,6 +101,7 @@ public class Simulation {
     }
     catch (FileNotFoundException fnfe) {
       System.err.println("Cannot find file " + dir + "hdb");
+      System.err.println(fnfe.getMessage());
       System.exit(1);
     }
     catch (IOException ioe) {
