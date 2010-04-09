@@ -19,7 +19,7 @@ kmax = min(5, len(colors))
 graphAttribute1 = "Check%"
 graphAttribute2 = "Bet%"
 
-filepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/agg.tab"
+filepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
 
 # ---------------------------------------------------------------------------
 
@@ -218,7 +218,7 @@ for d in totalDataPlusNames:
 	playersData[name] = pc.label(name, values)
 	
 print "Done."
-playerFilepath = directory + "players.txt"
+playerFilepath = directory + "playerClusters.txt"
 print "Writing player clusters to file",playerFilepath,"... ",
 
 f = open(playerFilepath, "wc")
