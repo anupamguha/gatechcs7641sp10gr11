@@ -60,13 +60,24 @@ public class Simulation {
     // iterate through game file, construct games and play them
     try {
       // load player clusters
-      PlayerClusters.load("players.txt");
+      PlayerClusters.load("playerClusters.txt");
       
       BufferedReader br = new BufferedReader(new FileReader(new File(dir + "hdb")));
       BufferedReader isr = new BufferedReader(new InputStreamReader(System.in));
       String line = br.readLine();
       while (line != null && next == true) {
-       Game g = constructGame(line);
+    	Game g = null;
+  	    try
+  	    {
+  	    	g = constructGame(line);
+  	    }
+  	    catch (Exception e)
+  	    {
+  	    	String id = line.split(" ")[0];
+  	    	System.out.println("Skipping game " + id + " due to exception");
+  	    	line = br.readLine();
+  	    	continue;
+  	    }
        g.play();
        
        if (interactive) {
@@ -83,7 +94,7 @@ public class Simulation {
       }
       
       Tracker tracker = Tracker.getInstance();
-      tracker.save("stats.tab");
+      tracker.save("situations.tab");
       
       br.close();
       isr.close();
