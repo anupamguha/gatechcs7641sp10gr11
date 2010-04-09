@@ -58,7 +58,7 @@ public class Tracker {
     BufferedWriter agg = null;
     
     try {
-      agg = new BufferedWriter(new FileWriter(directory + "agg.tab"));
+      agg = new BufferedWriter(new FileWriter(directory + "aggregatedPlayerHistories.tab"));
       
       StringBuilder sb = new StringBuilder();
       
