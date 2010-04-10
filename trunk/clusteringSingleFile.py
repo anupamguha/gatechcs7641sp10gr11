@@ -85,6 +85,9 @@ reducedDomain = orange.Domain(attribs)
 
 def makeKey(phase, potLevel, stackLevel):
 	return phase.lower()[0] + potLevel.lower()[0] + stackLevel.lower()[0]
+	
+numClustersSoFar = 0
+lowerClusterNumber = dict()
 
 for phase in phases:
 	for potLevel in potLevels:
@@ -162,6 +165,10 @@ for phase in phases:
 			
 			resultingClusterers[key] = bestClusterer
 			resultingClassifiers[key] = knn
+			
+			lowerClusterNumber[key] = numClustersSoFar
+			numClustersSoFar += len(bestClusterer.centroids)
+			
 
 print("------------------------------------------------------------")
 print "Saving clusterers and classifiers to files... ",
@@ -229,6 +236,8 @@ for name,d in playersData.iteritems():
 			for stackLevel in stackLevels:
 				key = makeKey(phase, potLevel, stackLevel)
 				val = d[key]
+				if val != None and val != "?":
+					val = int(val) + lowerClusterNumber[key]
 				f.write(str(val) + "\t")
 	f.write("\n")
 f.close()
