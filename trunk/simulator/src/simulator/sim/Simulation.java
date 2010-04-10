@@ -60,7 +60,7 @@ public class Simulation {
     // iterate through game file, construct games and play them
     try {
       // load player clusters
-      PlayerClusters.load("players.txt");
+      PlayerClusters.load("playerClusters.txt");
       
       BufferedReader br = new BufferedReader(new FileReader(new File(dir + "hdb")));
       BufferedReader isr = new BufferedReader(new InputStreamReader(System.in));
