@@ -4,10 +4,10 @@ import pdb
 # ---------------------------------------------------------------------------
 #                              SET THESE
 
-situationsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situations.tab"
-playerStatsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
+situationsFilepath = "C:/anupam/MLproject/simulator/situationsTotal.tab"
+playerStatsFilepath = "C:/anupam/MLproject/simulator2/data/aggregatedPlayerHistoriesTotal.tab"
 
-outputDir = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/"
+outputDir = "C:/anupam/MLProject/"
 
 # ---------------------------------------------------------------------------
 
@@ -15,8 +15,8 @@ def testLearners(data, trainSize, testSize):
 
 	majorityLearner = orange.MajorityLearner()
 	treeLearner = orange.TreeLearner()
-	#knnLearner = orange.KNNLearner()
-	learners = [treeLearner, majorityLearner]
+	knnLearner = orange.kNNLearner()
+	learners = [treeLearner, knnLearner, majorityLearner]
 	
 	if (trainSize + testSize > len(data)):
 		print "TrainSize + TestSize is bigger than data available, aborting"
@@ -73,30 +73,30 @@ def getPlayerStats(situationExample, playerDataStatsFull, phase, domain):
 			
 	stackPercent = situationExample["Stack%"]
 	if (phase == "PREFLOP"):
-		if (stackPercent < .10):
+		if (stackPercent < .4):
 			playerDataStats = playerDataStats.filter({"Stack%" : "LOW"})
-		elif (stackPercent < .15):
+		elif (stackPercent < .6):
 			playerDataStats = playerDataStats.filter({"Stack%" : "MEDIUM"})
 		else:
 			playerDataStats = playerDataStats.filter({"Stack%" : "HIGH"})
 	elif (phase == "FLOP"):
-		if (stackPercent < .12):
+		if (stackPercent < .1):
 			playerDataStats = playerDataStats.filter({"Stack%" : "LOW"})
-		elif (stackPercent < .25):
+		elif (stackPercent < .4):
 			playerDataStats = playerDataStats.filter({"Stack%" : "MEDIUM"})
 		else:
 			playerDataStats = playerDataStats.filter({"Stack%" : "HIGH"})
 	elif (phase == "TURN"):
-		if (stackPercent < .13):
+		if (stackPercent < .15):
 			playerDataStats = playerDataStats.filter({"Stack%" : "LOW"})
-		elif (stackPercent < .35):
+		elif (stackPercent < .45):
 			playerDataStats = playerDataStats.filter({"Stack%" : "MEDIUM"})
 		else:
 			playerDataStats = playerDataStats.filter({"Stack%" : "HIGH"})
 	else:
-		if (stackPercent < .04):
+		if (stackPercent < .2):
 			playerDataStats = playerDataStats.filter({"Stack%" : "LOW"})
-		elif (stackPercent < .35):
+		elif (stackPercent < .45):
 			playerDataStats = playerDataStats.filter({"Stack%" : "MEDIUM"})
 		else:
 			playerDataStats = playerDataStats.filter({"Stack%" : "HIGH"})
@@ -131,7 +131,7 @@ print "Done"
 print "Removing situations with unknown clusters, unknown actions, and more than 2 players...",
 situationsDataFiltered = situationsDataFull.filter({"Cluster" : -1}, negate=1)
 situationsDataFiltered = situationsDataFull.filter({"Action" : "?"}, negate=1)
-situationsDataFiltered = situationsDataFull.filter({"NumPlayers" : 2})
+#situationsDataFiltered = situationsDataFull.filter({"NumPlayers" : 2})
 print "Done"
 
 for phase in ["PREFLOP","FLOP","TURN","RIVER"]:
@@ -190,16 +190,16 @@ for phase in ["PREFLOP","FLOP","TURN","RIVER"]:
 		print "Warning: Skipping historied situations due to lack of examples"
 
 	print "Creating and testing learners on data w/o player model..."
-	testLearners(situationsDataPlain, 5, 5)
+	testLearners(situationsDataPlain, 0.65, 0.3)
 	print "Done"
 
 	print "Creating and testing learners on data w/ clustered player model..."
-	testLearners(situationsDataByCluster, 5, 5)
+	testLearners(situationsDataByCluster, 0.65, 0.3)
 	print "Done"
 	
 	if not skipFull:
 		print "Creating and testing learners on data w/ stat-based player model..."
-		testLearners(situationsWithStats, 5, 5)
+		testLearners(situationsWithStats, 0.65, 0.3)
 		print "Done"
 	else:
 		print "Warning: Skipping historied situations due to lack of examples"
