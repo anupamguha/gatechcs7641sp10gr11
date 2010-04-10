@@ -29,10 +29,10 @@ public class State {
 		switch(phase)
 		{
 		case PREFLOP:
-			if (stackPercent < .10) {
+			if (stackPercent < .4) {
 			      this.stackPercent = Amount.LOW;
 			    }
-			    else if (stackPercent < .15) {
+			    else if (stackPercent < .6) {
 			      this.stackPercent = Amount.MEDIUM;
 			    }
 			    else {
@@ -40,10 +40,10 @@ public class State {
 			    }
 			break;
 		case FLOP:
-			if (stackPercent < .12) {
+			if (stackPercent < .1) {
 			      this.stackPercent = Amount.LOW;
 			    }
-			    else if (stackPercent < .25) {
+			    else if (stackPercent < .4) {
 			      this.stackPercent = Amount.MEDIUM;
 			    }
 			    else {
@@ -52,10 +52,10 @@ public class State {
 			
 			break;
 		case TURN:
-			if (stackPercent < .13) {
+			if (stackPercent < .15) {
 			      this.stackPercent = Amount.LOW;
 			    }
-			    else if (stackPercent < .35) {
+			    else if (stackPercent < .45) {
 			      this.stackPercent = Amount.MEDIUM;
 			    }
 			    else {
@@ -63,10 +63,10 @@ public class State {
 			    }
 			break;
 		case RIVER:
-			if (stackPercent < .04) {
+			if (stackPercent < .2) {
 			      this.stackPercent = Amount.LOW;
 			    }
-			    else if (stackPercent < .35) {
+			    else if (stackPercent < .45) {
 			      this.stackPercent = Amount.MEDIUM;
 			    }
 			    else {
