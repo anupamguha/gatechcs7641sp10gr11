@@ -63,6 +63,9 @@ public class Tracker {
       sb.append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t");
       sb.append("\t").append("\t").append("\t").append("class").append("\n");
       
+      bw.write(sb.toString());
+      sb.delete(0, sb.length() - 1);
+      
       // write stats to file
       
       for (Stats s : stats) {
