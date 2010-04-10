@@ -64,12 +64,20 @@ public class Tracker {
       sb.append("\t").append("\t").append("\t").append("class").append("\n");
       
       // write stats to file
-      bw.write(sb.toString());
+      
+      for (Stats s : stats) {
+    	  if (s.getNumPlayers() == 2)
+    	  {
+    	  bw.write(s.toString());
+    	  }
+    	  }
+
+ /*     bw.write(sb.toString());
       
       for (Stats s : stats) {
         bw.write(s.toString());
       }
-      
+   */   
       bw.close();
       
     }

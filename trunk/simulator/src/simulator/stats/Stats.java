@@ -92,7 +92,10 @@ public class Stats {
   public double getFoldAmt() {
     return foldAmt;
   }
-  
+  public int getNumPlayers()
+  {
+	  return numPlayers;
+  }
   /* (non-Javadoc)
    * @see java.lang.Object#toString()
    */
