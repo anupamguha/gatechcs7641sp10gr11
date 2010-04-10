@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import simulator.game.Player;
-import simulator.stats.Stats.PHASE;
 
 public class Tracker {
   
@@ -37,7 +36,7 @@ public class Tracker {
       StringBuilder sb = new StringBuilder();
       
       sb.append("Player").append("\t").append("Cluster").append("\t").append("GameId").append("\t");
-      sb.append("NumPlayers").append("\t").append("Phase").append("\t").append("Pay?").append("\t");
+      sb.append("NumPlayers").append("\t").append("Phase").append("\t").append("PotEnum").append("\t").append("StackEnum").append("\t").append("Pay?").append("\t");
       sb.append("AvgRaise").append("\t").append("PotSize").append("\t").append("Pot%").append("\t");
       sb.append("LastPhase%").append("\t").append("Stack%").append("\t").append("MaxOppStack%").append("\t");
       sb.append("OppsStack%").append("\t").append("Bets").append("\t").append("Raises").append("\t");
@@ -49,7 +48,7 @@ public class Tracker {
       sb.delete(0, sb.length() - 1);
       
       sb.append("d").append("\t").append("d").append("\t").append("d").append("\t");
-      sb.append("d").append("\t").append("d").append("\t").append("d").append("\t");
+      sb.append("d").append("\t").append("d").append("\t").append("d").append("\t").append("d").append("\t").append("d").append("\t");
       sb.append("c").append("\t").append("c").append("\t").append("c").append("\t");
       sb.append("c").append("\t").append("c").append("\t").append("c").append("\t");
       sb.append("c").append("\t").append("c").append("\t").append("c").append("\t");
@@ -60,7 +59,7 @@ public class Tracker {
       sb.delete(0, sb.length() - 1);
       
       sb.append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t");
-      sb.append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t");
+      sb.append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t").append("\t");
       sb.append("\t").append("\t").append("\t").append("class").append("\n");
       
       bw.write(sb.toString());

@@ -226,7 +226,7 @@ public class Game {
           stats.setName(p.getName());
           stats.setGame(timestamp);
           stats.setNumPlayers(playing);
-          stats.setPhase(Stats.PHASE.PREFLOP);
+          stats.setPhase(State.Phase.PREFLOP);
           stats.setPotSize(0);
           stats.setPotPercentage(0);
           stats.setLastPhasePercentage(p.getLastPhasePercent());
@@ -539,7 +539,7 @@ public class Game {
           stats.setName(p.getName());
           stats.setGame(timestamp);
           stats.setNumPlayers(playing);
-          stats.setPhase(Stats.PHASE.FLOP);
+          stats.setPhase(State.Phase.FLOP);
           stats.setPotSize((double) flopPot / (double) table);
           stats.setPotPercentage((double) p.getChipsBet() / (double) table);
           stats.setLastPhasePercentage(p.getLastPhasePercent());
@@ -850,7 +850,7 @@ public class Game {
           stats.setName(p.getName());
           stats.setGame(timestamp);
           stats.setNumPlayers(playing);
-          stats.setPhase(Stats.PHASE.TURN);
+          stats.setPhase(State.Phase.TURN);
           stats.setPotSize((double) turnPot / (double) table);
           stats.setPotPercentage((double) p.getChipsBet() / (double) table);
           stats.setLastPhasePercentage(p.getLastPhasePercent());
@@ -1163,7 +1163,7 @@ public class Game {
           stats.setName(p.getName());
           stats.setGame(timestamp);
           stats.setNumPlayers(playing);
-          stats.setPhase(Stats.PHASE.RIVER);
+          stats.setPhase(State.Phase.RIVER);
           stats.setPotSize((double) riverPot / (double) table);
           stats.setPotPercentage((double) p.getChipsBet() / (double) table);
           stats.setLastPhasePercentage(p.getLastPhasePercent());

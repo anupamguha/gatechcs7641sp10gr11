@@ -7,15 +7,11 @@ import simulator.game.Action;
 
 public class Stats {
   
-  public enum PHASE {
-    PREFLOP, FLOP, TURN, RIVER
-  };
-  
   private String name;
   private int cluster;
   private int game;
   private int numPlayers;
-  private PHASE phase;
+  private State.Phase phase;
   private boolean pay;
   private double avgRaise;
   private double potSize;
@@ -28,6 +24,8 @@ public class Stats {
   private int raises;
   private int maxOppBets;
   private double foldAmt;
+  
+  private State state;
   
   private Action.ACTION action;
   
@@ -46,7 +44,7 @@ public class Stats {
   public void setNumPlayers(int numPlayers) {
     this.numPlayers = numPlayers;
   }
-  public void setPhase(PHASE phase) {
+  public void setPhase(State.Phase phase) {
     this.phase = phase;
   }
   public void setPay(boolean pay) {
@@ -100,10 +98,13 @@ public class Stats {
    * @see java.lang.Object#toString()
    */
   public String toString() {
+	  
+	this.calculateState();
+	  
     StringBuilder sb = new StringBuilder();
     
     sb.append(name).append("\t").append(cluster).append("\t").append(game).append("\t");
-    sb.append(numPlayers).append("\t").append(phase.toString()).append("\t").append(pay).append("\t");
+    sb.append(numPlayers).append("\t").append(phase.toString()).append("\t").append(state.getPotPercent().toString()).append("\t").append(state.getStackPercent().toString()).append("\t").append(pay).append("\t");
     sb.append(four.format(avgRaise)).append("\t").append(four.format(potSize)).append("\t").append(four.format(potPercentage)).append("\t");
     sb.append(four.format(lastPhasePercentage)).append("\t").append(four.format(stackPercentage)).append("\t");
     sb.append(four.format(maxOppStackPercentage)).append("\t").append(four.format(oppStackPercentage)).append("\t");
@@ -115,6 +116,19 @@ public class Stats {
     
     return sb.toString();
     
+  }
+  
+  public void calculateState()
+  {
+	  state = new State();
+	  state.setPhase(this.phase);
+	  state.setPotPercent(this.potPercentage);
+	  state.setStackPercent(this.stackPercentage);
+  }
+  
+  public State getState()
+  {
+	  return state;
   }
 
 }

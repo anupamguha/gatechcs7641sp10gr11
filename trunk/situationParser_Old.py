@@ -7,24 +7,13 @@ import pdb
 #situationsFilepath = "C:/anupam/MLproject/simulator/situationsTotal.tab"
 #playerStatsFilepath = "C:/anupam/MLproject/simulator2/data/aggregatedPlayerHistoriesTotal.tab"
 
-situationsFilepath =  "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situationsTest.tab"
+situationsFilepath =  "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situations.tab"
 playerStatsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
 
 #outputDir = "C:/anupam/MLProject/"
 outputDir = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/"
 
 # ---------------------------------------------------------------------------
-
-PREFLOP = "PREFLOP"
-FLOP = "FLOP"
-TURN = "TURN"
-RIVER = "RIVER"
-LOW = "LOW"
-MED = "MEDIUM"
-HIGH = "HIGH"
-phases = [PREFLOP, FLOP, TURN, RIVER]
-stackLevels = [LOW, MED, HIGH]
-potLevels = [LOW, MED, HIGH]
 
 def testLearners(data, trainSize, testSize):
 
@@ -126,7 +115,7 @@ def getPlayerStats(situationExample, playerDataStatsFull, phase, domain):
 	for i in range(4, len(history)):
 		playerStatsSlice.append(history[i])
 	situationSlice = list()
-	for i in range(7, len(situationExample)):
+	for i in range(5, len(situationExample)):
 		situationSlice.append(situationExample[i])
 		
 	ex = orange.Example(domain, playerStatsSlice + situationSlice)
@@ -149,85 +138,73 @@ situationsDataFiltered = situationsDataFull.filter({"Action" : "?"}, negate=1)
 situationsDataFiltered = situationsDataFull.filter({"NumPlayers" : "2"})
 print "Done"
 
-for phase in phases:
+for phase in ["PREFLOP","FLOP","TURN","RIVER"]:
+
+	print "\nORGANIZING DATA FOR PHASE:",phase
 	
 	situationsPhaseData = situationsDataFiltered.filter({"Phase" : phase})
 
-	for potLevel in potLevels:
+	print "Creating classification data without player model...",
+	situationsDomainPlain = orange.Domain(situationsPhaseData.domain[5:], True)
+	situationsDataPlain = orange.ExampleTable(situationsDomainPlain, situationsPhaseData)
+	print len(situationsDataPlain)," found...",
+	print "Done"
+
+	print "Creating classification data using clusters...",
+	situationsDomainByCluster = orange.Domain(situationsPhaseData.domain[1:2] + situationsPhaseData.domain[5:], True)
+	situationsDataByCluster = orange.ExampleTable(situationsDomainByCluster, situationsPhaseData)
+	print len(situationsDataByCluster)," found...",
+	print "Done"
+
+	print "Creating classification data using full player stats...",
+	situationsWithStats = list()
+	situationsWithStatsDomain = orange.Domain(playerStatsDataFull.domain[4:] + situationsPhaseData.domain[5:], True)
+	for situationExample in situationsPhaseData:
+		statsExample = getPlayerStats(situationExample, playerStatsDataFull, phase, situationsWithStatsDomain)
+		if (statsExample == None):
+			continue
+		situationsWithStats.append(statsExample)
+	#pdb.set_trace()
+	print len(situationsWithStats)," found...",
+	skipFull = False
+	if len(situationsWithStats) < 5:
+		skipFull = True
+		print "Skipping...",
+	else:
+		situationsWithStats = orange.ExampleTable(situationsWithStatsDomain, situationsWithStats)
+	#pdb.set_trace()
+	print "Done"
+
+	plainFilepath = outputDir + "situationsPlain" + phase + ".tab"
+	print "Saving classification data w/o player model to",plainFilepath,"...",
+	situationsDataPlain.save(plainFilepath)
+	print "Done"
+
+	clusterFilepath = outputDir + "situationsClustered" + phase + ".tab"
+	print "Saving classification data w/ clustered player model to",clusterFilepath,"...",
+	situationsDataByCluster.save(clusterFilepath)
+	print "Done"
 	
-		situationsPotData = situationsPhaseData.filter({"PotEnum" : potLevel})
+	historyFilepath = outputDir + "situationsHistoried" + phase + ".tab"
+	if not skipFull:
+		print "Saving classification data w/ clustered player model to",historyFilepath,"...",
+		situationsWithStats.save(historyFilepath)
+		print "Done"
+	else:
+		print "Warning: Skipping historied situations due to lack of examples"
+
+	print "Creating and testing learners on data w/o player model..."
+	testLearners(situationsDataPlain, 0.65, 0.3)
+	print "Done"
+
+	print "Creating and testing learners on data w/ clustered player model..."
+	testLearners(situationsDataByCluster, 0.65, 0.3)
+	print "Done"
 	
-		for stackLevel in stackLevels:
-		
-			situationsStackData = situationsPotData.filter({"StackEnum" : stackLevel})
-			
-			data = situationsStackData
-
-			print "\nORGANIZING DATA FOR : " + phase + "," + potLevel + "," + stackLevel
-			
-			
-
-			print "Creating classification data without player model...",
-			situationsDomainPlain = orange.Domain(data.domain[7:], True)
-			situationsDataPlain = orange.ExampleTable(situationsDomainPlain, data)
-			print len(situationsDataPlain)," found...",
-			print "Done"
-
-			print "Creating classification data using clusters...",
-			situationsDomainByCluster = orange.Domain(data.domain[1:2] + data.domain[7:], True)
-			situationsDataByCluster = orange.ExampleTable(situationsDomainByCluster, data)
-			print len(situationsDataByCluster)," found...",
-			print "Done"
-
-			print "Creating classification data using full player stats...",
-			situationsWithStats = list()
-			situationsWithStatsDomain = orange.Domain(playerStatsDataFull.domain[4:] + data.domain[7:], True)
-			for situationExample in data:
-				statsExample = getPlayerStats(situationExample, playerStatsDataFull, phase, situationsWithStatsDomain)
-				if (statsExample == None):
-					continue
-				situationsWithStats.append(statsExample)
-			#pdb.set_trace()
-			print len(situationsWithStats)," found...",
-			skipFull = False
-			if len(situationsWithStats) < 5:
-				skipFull = True
-				print "Skipping...",
-			else:
-				situationsWithStats = orange.ExampleTable(situationsWithStatsDomain, situationsWithStats)
-			#pdb.set_trace()
-			print "Done"
-
-			plainFilepath = outputDir + "situationsPlain" + phase + potLevel + stackLevel + ".tab"
-			print "Saving classification data w/o player model to",plainFilepath,"...",
-			situationsDataPlain.save(plainFilepath)
-			print "Done"
-
-			clusterFilepath = outputDir + "situationsClustered" + phase + potLevel + stackLevel + ".tab"
-			print "Saving classification data w/ clustered player model to",clusterFilepath,"...",
-			situationsDataByCluster.save(clusterFilepath)
-			print "Done"
-			
-			historyFilepath = outputDir + "situationsHistoried" + phase + potLevel + stackLevel + ".tab"
-			if not skipFull:
-				print "Saving classification data w/ clustered player model to",historyFilepath,"...",
-				situationsWithStats.save(historyFilepath)
-				print "Done"
-			else:
-				print "Warning: Skipping historied situations due to lack of examples"
-
-			print "Creating and testing learners on data w/o player model..."
-			testLearners(situationsDataPlain, 0.65, 0.3)
-			print "Done"
-
-			print "Creating and testing learners on data w/ clustered player model..."
-			testLearners(situationsDataByCluster, 0.65, 0.3)
-			print "Done"
-			
-			if not skipFull:
-				print "Creating and testing learners on data w/ stat-based player model..."
-				testLearners(situationsWithStats, 0.65, 0.3)
-				print "Done"
-			else:
-				print "Warning: Skipping historied situations due to lack of examples"
+	if not skipFull:
+		print "Creating and testing learners on data w/ stat-based player model..."
+		testLearners(situationsWithStats, 0.65, 0.3)
+		print "Done"
+	else:
+		print "Warning: Skipping historied situations due to lack of examples"
 
