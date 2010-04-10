@@ -4,10 +4,14 @@ import pdb
 # ---------------------------------------------------------------------------
 #                              SET THESE
 
-situationsFilepath = "C:/anupam/MLproject/simulator/situationsTotal.tab"
-playerStatsFilepath = "C:/anupam/MLproject/simulator2/data/aggregatedPlayerHistoriesTotal.tab"
+#situationsFilepath = "C:/anupam/MLproject/simulator/situationsTotal.tab"
+#playerStatsFilepath = "C:/anupam/MLproject/simulator2/data/aggregatedPlayerHistoriesTotal.tab"
 
-outputDir = "C:/anupam/MLProject/"
+situationsFilepath =  "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situations.tab"
+playerStatsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
+
+#outputDir = "C:/anupam/MLProject/"
+outputDir = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/"
 
 # ---------------------------------------------------------------------------
 
@@ -15,8 +19,8 @@ def testLearners(data, trainSize, testSize):
 
 	majorityLearner = orange.MajorityLearner()
 	treeLearner = orange.TreeLearner()
-	knnLearner = orange.kNNLearner()
-	learners = [treeLearner, knnLearner, majorityLearner]
+	#knnLearner = orange.kNNLearner()
+	learners = [treeLearner, majorityLearner]
 	
 	if (trainSize + testSize > len(data)):
 		print "TrainSize + TestSize is bigger than data available, aborting"
@@ -129,9 +133,9 @@ situationsDataFull = orange.ExampleTable(situationsFilepath)
 print "Done"
 
 print "Removing situations with unknown clusters, unknown actions, and more than 2 players...",
-situationsDataFiltered = situationsDataFull.filter({"Cluster" : -1}, negate=1)
+situationsDataFiltered = situationsDataFull.filter({"Cluster" : "-1"}, negate=1)
 situationsDataFiltered = situationsDataFull.filter({"Action" : "?"}, negate=1)
-#situationsDataFiltered = situationsDataFull.filter({"NumPlayers" : 2})
+situationsDataFiltered = situationsDataFull.filter({"NumPlayers" : "2"})
 print "Done"
 
 for phase in ["PREFLOP","FLOP","TURN","RIVER"]:
