@@ -1,17 +1,21 @@
-import orange, orngTest, orngStat
+import orange, orngTest, orngStat, orngSVM 
 import pdb
 
 # ---------------------------------------------------------------------------
 #                              SET THESE
 
-#situationsFilepath = "C:/anupam/MLproject/simulator/situationsTotal.tab"
-#playerStatsFilepath = "C:/anupam/MLproject/simulator2/data/aggregatedPlayerHistoriesTotal.tab"
+situationsFilepath = "C:/anupam/MLproject/simulator/situationsTotal.tab"
+playerStatsFilepath = "C:/anupam/MLproject/simulator2/data/aggregatedPlayerHistoriesTotal.tab"
 
-situationsFilepath =  "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situationsTest.tab"
-playerStatsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
+#situationsFilepath =  "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situations.tab"
+#playerStatsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
 
-#outputDir = "C:/anupam/MLProject/"
-outputDir = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/"
+#situationsFilepath =  "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator/situationsTest.tab"
+#playerStatsFilepath = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/trunk/simulator2/data/aggregatedPlayerHistories.tab"
+
+
+outputDir = "C:/anupam/MLProject/"
+#outputDir = "C:/Users/hartsoka/Documents/Classes/CS 7641/project/"
 
 # ---------------------------------------------------------------------------
 
@@ -30,8 +34,13 @@ def testLearners(data, trainSize, testSize):
 
 	majorityLearner = orange.MajorityLearner()
 	treeLearner = orange.TreeLearner()
-	#knnLearner = orange.kNNLearner()
-	learners = [treeLearner, majorityLearner]
+	knnLearner = orange.kNNLearner()
+	knnLearner.k=5
+	svmLearner =orngSVM.SVMLearner()
+	svmLearner.kernelFunc=orngSVM.RBFKernelWrapper(orange.ExamplesDistanceConstructor_Euclidean(data), gamma=0.5)
+	svmLearner.kernel_type=orange.SVMLearner.Custom
+	svmLearner.probability=True 
+	learners = [treeLearner, knnLearner, svmLearner, majorityLearner]
 	
 	if (trainSize + testSize > len(data)):
 		print "TrainSize + TestSize is bigger than data available, aborting"
