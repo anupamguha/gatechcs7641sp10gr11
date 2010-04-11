@@ -388,6 +388,7 @@ public class Game {
               else {
                 stats.setAction(ACTION.BET);
               }
+              ++numRaises;
               p.addBet();
               betList.add(p);
             }
@@ -697,6 +698,7 @@ public class Game {
             }
             else {
               stats.setAction(ACTION.BET);
+              ++numRaises;
               p.addBet();
               betList.add(p);
             }
@@ -1007,6 +1009,7 @@ public class Game {
             }
             else {
               stats.setAction(ACTION.BET);
+              ++numRaises;
               p.addBet();
               betList.add(p);
             }
@@ -1334,6 +1337,7 @@ public class Game {
             }
             else {
               stats.setAction(ACTION.BET);
+              ++numRaises;
               p.addBet();
               betList.add(p);
             }
