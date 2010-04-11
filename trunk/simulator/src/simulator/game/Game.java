@@ -429,7 +429,7 @@ public class Game {
         s.setFoldAmt(0.0);
       }
       else {
-        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+        s.setFoldAmt((((double) potIncrease / (double) playing / (double) numRaises) * foldAmt) / (double) table);
       }
       
       tracker.addStat(s);
@@ -742,7 +742,7 @@ public class Game {
         s.setFoldAmt(0.0);
       }
       else {
-        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+        s.setFoldAmt((((double) potIncrease / (double) playing / (double) numRaises) * foldAmt) / (double) table);
       }
       
       tracker.addStat(s);
@@ -1054,7 +1054,7 @@ public class Game {
         s.setFoldAmt(0.0);
       }
       else {
-        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+        s.setFoldAmt((((double) potIncrease / (double) playing / (double) numRaises) * foldAmt) / (double) table);
       }
       
       tracker.addStat(s);
@@ -1375,7 +1375,7 @@ public class Game {
         s.setFoldAmt(0.0);
       }
       else {
-        s.setFoldAmt(((double) potIncrease / (double) playing / (double) numRaises) * foldAmt);
+        s.setFoldAmt((((double) potIncrease / (double) playing / (double) numRaises) * foldAmt) / (double) table);
       }
       
       tracker.addStat(s);
